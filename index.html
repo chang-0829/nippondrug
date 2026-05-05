@@ -13,7 +13,6 @@
                 extend: {
                     colors: {
                         sakura: { 50: '#fdf2f8', 100: '#fce7f3', 500: '#ec4899', 600: '#db2777' },
-                        // 保留醫療輔助色用於警語等區塊
                         medical: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' } 
                     },
                     fontFamily: { sans: ['"Noto Sans TC"', 'sans-serif'] }
@@ -46,13 +45,16 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         const { useState, useEffect } = React;
 
         // 初始資料庫 (內建 EVE A 與 大正百保能 兩款常見藥物作為範例)
         const initialProducts = [
             {
-                id: 1,
                 brand: "SSP 株式會社 (白兔牌)",
                 name: "EVE A錠 (白盒)",
                 category: "解熱鎮痛 (止痛藥)",
@@ -68,7 +70,6 @@
                 pharmacist: "「EVE系列之所以紅，是因為它加了鎮靜劑和咖啡因，能大幅放大止痛的體感效果，對偏頭痛和嚴重經痛非常有效。但要注意，鎮靜成分會造成明顯嗜睡，如果要開車或考試，這款藥絕對不適合你！」"
             },
             {
-                id: 2,
                 brand: "大正製藥",
                 name: "百保能 Pabron Gold A 微粒",
                 category: "綜合感冒藥",
@@ -88,7 +89,6 @@
         // --- 共用元件：導覽列 ---
         const Navbar = ({ setView }) => {
             const [scrolled, setScrolled] = useState(false);
-            
             useEffect(() => {
                 const handleScroll = () => setScrolled(window.scrollY > 10);
                 window.addEventListener('scroll', handleScroll);
@@ -156,7 +156,7 @@
                                         <div className="text-xs font-bold text-slate-400 mb-1">{product.brand}</div>
                                         <h3 className="text-xl font-bold text-slate-900 mb-2 hover:text-sakura-500 line-clamp-2">{product.name}</h3>
                                         <div className="flex flex-wrap gap-1 mb-3">
-                                            {product.tags.split(',').slice(0, 3).map((tag, i) => (
+                                            {product.tags && product.tags.split(',').slice(0, 3).map((tag, i) => (
                                                 <span key={i} className="bg-sakura-50 text-sakura-600 px-2 py-0.5 rounded text-xs">{tag.trim()}</span>
                                             ))}
                                         </div>
@@ -164,24 +164,22 @@
                                     </div>
                                 </article>
                             ))}
-                            {products.length === 0 && <div className="col-span-3 text-center text-slate-500 py-10">目前尚無資料。</div>}
+                            {products.length === 0 && <div className="col-span-3 text-center text-slate-500 py-10">資料載入中...或目前尚無資料。</div>}
                         </div>
                     </div>
                 </section>
             </div>
         );
 
-        // --- 視圖：前台產品詳細頁 (藥物專業排版) ---
+        // --- 視圖：前台產品詳細頁 ---
         const ProductDetailView = ({ product, setView }) => {
             if(!product) return null;
 
-            // 解析成分字串 (格式：名稱|劑量|說明 \n)
             const parsedIngredients = product.ingredientsText ? product.ingredientsText.split('\n').filter(line => line.trim()).map(line => {
                 const parts = line.split('|');
                 return { name: parts[0] || '', amount: parts[1] || '', desc: parts[2] || '' };
             }) : [];
 
-            // 解析禁忌字串
             const parsedWarnings = product.warnings ? product.warnings.split('\n').filter(w => w.trim()) : [];
 
             return (
@@ -192,7 +190,6 @@
                         </button>
                     </div>
 
-                    {/* Hero Section */}
                     <section className="max-w-7xl mx-auto px-4 mb-8">
                         <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-10">
                             <div className="w-full md:w-2/5 flex flex-col items-center">
@@ -208,7 +205,7 @@
                                 <h1 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight">{product.name}</h1>
                                 
                                 <div className="flex flex-wrap gap-2 mb-6">
-                                    {product.tags.split(',').map((tag, i) => (
+                                    {product.tags && product.tags.split(',').map((tag, i) => (
                                         <span key={i} className="bg-sakura-50 text-sakura-700 border border-sakura-200 px-3 py-1 rounded-full text-xs font-bold">{tag.trim()}</span>
                                     ))}
                                 </div>
@@ -230,11 +227,9 @@
                         </div>
                     </section>
 
-                    {/* 詳細內容區塊 */}
                     <div className="max-w-7xl mx-auto px-4 pb-20 flex flex-col lg:flex-row gap-8">
                         <div className="w-full lg:w-2/3 space-y-10">
                             
-                            {/* 成分與功效 */}
                             <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
                                 <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
                                     <i className="fa-solid fa-pills text-sakura-500 mr-3"></i> 藥理成分與機轉
@@ -262,7 +257,6 @@
                                 </div>
                             </section>
 
-                            {/* 用法用量 */}
                             <section className="bg-sakura-50 p-8 rounded-3xl border border-sakura-100">
                                 <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center">
                                     <i className="fa-solid fa-clock text-sakura-500 mr-3"></i> 用法與用量
@@ -270,7 +264,6 @@
                                 <p className="text-slate-700 leading-relaxed font-medium">{product.dosage}</p>
                             </section>
 
-                            {/* 禁忌與副作用 */}
                             <section className="bg-white p-8 rounded-3xl shadow-sm border border-red-100 relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
                                 <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center text-red-600">
@@ -286,7 +279,6 @@
                                 </div>
                             </section>
 
-                            {/* 藥師觀點 */}
                             <section className="bg-slate-800 p-8 rounded-3xl text-white relative shadow-lg">
                                 <i className="fa-solid fa-quote-left text-5xl text-slate-700 absolute top-6 left-6"></i>
                                 <div className="relative z-10 pl-8">
@@ -296,10 +288,8 @@
                                     <p className="text-slate-300 leading-relaxed italic">{product.pharmacist}</p>
                                 </div>
                             </section>
-
                         </div>
 
-                        {/* 側邊欄 (購買資訊) */}
                         <div className="w-full lg:w-1/3">
                             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden sticky top-24">
                                 <div className="bg-slate-100 text-slate-800 p-4 font-bold flex items-center border-b border-slate-200">
@@ -325,27 +315,99 @@
             );
         };
 
+        // --- 視圖：後台登入畫面 ---
+        const AdminLoginView = ({ setView, setIsAuthenticated }) => {
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                // 前端簡易密碼阻擋
+                if (password === 'admin123') {
+                    setIsAuthenticated(true);
+                    setView('admin');
+                } else {
+                    setError('密碼錯誤，請重新輸入');
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+                    <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                        <div className="flex justify-center mb-6 text-sakura-500 text-5xl">
+                            <i className="fa-solid fa-lock"></i>
+                        </div>
+                        <h2 className="text-center text-3xl font-bold text-slate-900 mb-2">管理後台登入</h2>
+                        <p className="text-center text-sm text-slate-500">預設密碼為: admin123</p>
+                    </div>
+
+                    <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-slate-200">
+                            <form onSubmit={handleLogin} className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700">管理員密碼</label>
+                                    <div className="mt-1">
+                                        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} 
+                                               className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-sakura-500 focus:border-sakura-500" />
+                                    </div>
+                                </div>
+                                {error && <div className="text-red-500 text-sm font-bold">{error}</div>}
+                                <div>
+                                    <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sakura-500 hover:bg-sakura-600 focus:outline-none">
+                                        登入
+                                    </button>
+                                </div>
+                            </form>
+                            <div className="mt-6">
+                                <button onClick={() => setView('home')} className="w-full text-center text-sm text-slate-500 hover:text-sakura-500">
+                                    <i className="fa-solid fa-arrow-left mr-1"></i> 返回前台首頁
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // --- 視圖：後台管理系統 ---
-        const AdminDashboard = ({ products, setProducts, setView }) => {
+        const AdminDashboard = ({ products, setView }) => {
             const [formData, setFormData] = useState(null);
 
             const handleEdit = (product) => setFormData({...product});
             
             const handleAddNew = () => setFormData({
-                id: Date.now(), brand: "", name: "", category: "常備藥", classification: "第 2 類醫藥品",
+                brand: "", name: "", category: "常備藥", classification: "第 2 類醫藥品",
                 image: "", price: "", tags: "", description: "", alert: "", ingredientsText: "", dosage: "", warnings: "", pharmacist: ""
             });
 
-            const handleDelete = (id) => {
-                if(confirm("確定要刪除這筆藥物資料嗎？")) setProducts(products.filter(p => p.id !== id));
+            const handleDelete = async (id) => {
+                if(confirm("確定要刪除這筆藥物資料嗎？")) {
+                    try {
+                        const docRef = doc(window.db, 'products', id);
+                        await deleteDoc(docRef);
+                    } catch (error) {
+                        console.error("刪除失敗:", error);
+                        alert("刪除失敗，請檢查資料庫權限設定");
+                    }
+                }
             };
 
-            const handleSave = (e) => {
+            const handleSave = async (e) => {
                 e.preventDefault();
-                const isNew = !products.find(p => p.id === formData.id);
-                if(isNew) setProducts([formData, ...products]);
-                else setProducts(products.map(p => p.id === formData.id ? formData : p));
-                setFormData(null);
+                const collRef = collection(window.db, 'products');
+                
+                try {
+                    if (formData.id) {
+                        const docRef = doc(window.db, 'products', formData.id);
+                        await updateDoc(docRef, formData);
+                    } else {
+                        await addDoc(collRef, { ...formData, createdAt: Date.now() });
+                    }
+                    setFormData(null);
+                } catch (error) {
+                    console.error("儲存失敗:", error);
+                    alert("儲存失敗，請檢查資料庫權限設定");
+                }
             };
 
             return (
@@ -396,7 +458,7 @@
                         ) : (
                             <div className="bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
                                 <div className="flex justify-between items-center mb-6 border-b pb-4">
-                                    <h2 className="text-2xl font-bold text-slate-800">編輯藥物資料</h2>
+                                    <h2 className="text-2xl font-bold text-slate-800">{formData.id ? '編輯藥物' : '新增藥物'}</h2>
                                     <button onClick={() => setFormData(null)} className="text-slate-500 hover:text-slate-800"><i className="fa-solid fa-xmark text-xl"></i></button>
                                 </div>
                                 <form onSubmit={handleSave} className="space-y-5">
@@ -472,25 +534,91 @@
             );
         };
 
-        // --- 主程式 ---
+        // --- 主程式 App ---
         const App = () => {
             const [view, setView] = useState('home');
-            const [products, setProducts] = useState(initialProducts);
+            const [products, setProducts] = useState([]);
             const [activeProduct, setActiveProduct] = useState(null);
+            
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [user, setUser] = useState(null);
+            const [dbReady, setDbReady] = useState(false);
 
-            // 確保切換頁面時滾動到最上方
             useEffect(() => { window.scrollTo(0, 0); }, [view]);
+
+            // 1. 初始化 Firebase (帶入您的 Config)
+            useEffect(() => {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDQ3jh6JLTAEEedCNaev_7wuDzSrX9rdJw",
+                    authDomain: "nippondrug.firebaseapp.com",
+                    projectId: "nippondrug",
+                    storageBucket: "nippondrug.firebasestorage.app",
+                    messagingSenderId: "872135164108",
+                    appId: "1:872135164108:web:7b7de05ff82f3166400269"
+                };
+
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    const auth = getAuth(app);
+                    window.db = getFirestore(app);
+
+                    // 自動匿名登入，讓訪客能讀取資料
+                    signInAnonymously(auth).catch(e => console.error("匿名登入失敗", e));
+
+                    const unsubscribe = onAuthStateChanged(auth, (u) => {
+                        setUser(u);
+                        if(u) setDbReady(true);
+                    });
+                    return () => unsubscribe();
+                } catch (error) {
+                    console.error("Firebase 初始化失敗", error);
+                }
+            }, []);
+
+            // 2. 監聽 Firestore 資料
+            useEffect(() => {
+                if (!dbReady || !user) return;
+                
+                // 連結到 'products' 這個集合 (Collection)
+                const collRef = collection(window.db, 'products');
+                const unsubscribe = onSnapshot(collRef, (snapshot) => {
+                    const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    data.sort((a, b) => b.createdAt - a.createdAt);
+
+                    // 第一次開啟若資料庫為空，自動匯入預設的兩筆藥品
+                    if (data.length === 0 && !window.hasSeeded) {
+                        window.hasSeeded = true;
+                        initialProducts.forEach(async (p) => {
+                            await addDoc(collRef, { ...p, createdAt: Date.now() });
+                        });
+                    } else {
+                        setProducts(data);
+                    }
+                }, (error) => console.error("Firestore 讀取失敗:", error));
+
+                return () => unsubscribe();
+            }, [dbReady, user]);
+
+            const renderView = () => {
+                if (view === 'admin' && !isAuthenticated) {
+                    return <AdminLoginView setView={setView} setIsAuthenticated={setIsAuthenticated} />;
+                }
+                
+                switch(view) {
+                    case 'home': return <HomeView products={products} setView={setView} setActiveProduct={setActiveProduct} />;
+                    case 'productDetail': return <ProductDetailView product={activeProduct} setView={setView} />;
+                    case 'admin': return <AdminDashboard products={products} setView={setView} />;
+                    default: return <HomeView products={products} setView={setView} setActiveProduct={setActiveProduct} />;
+                }
+            };
 
             return (
                 <div className="min-h-screen flex flex-col">
                     {view !== 'admin' && <Navbar setView={setView} />}
                     <div className="flex-grow">
-                        {view === 'home' && <HomeView products={products} setView={setView} setActiveProduct={setActiveProduct} />}
-                        {view === 'productDetail' && <ProductDetailView product={activeProduct} setView={setView} />}
-                        {view === 'admin' && <AdminDashboard products={products} setProducts={setProducts} setView={setView} />}
+                        {renderView()}
                     </div>
 
-                    {/* 免責聲明 Footer */}
                     {view !== 'admin' && (
                         <footer className="bg-slate-900 text-slate-300 py-12 border-t-4 border-sakura-500 mt-auto">
                             <div className="max-w-7xl mx-auto px-4">
