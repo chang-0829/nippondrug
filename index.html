@@ -54,37 +54,32 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // 你的電郵加密後的 ID (外人無法推算)
+        // 你的電郵加密後的 ID (對應 a0909921988@gmail.com)
         const ADMIN_HASH = "64969299403d5272a27d2c35582f342732a37397e51084b2e6639733796d830b";
 
         // --- 視圖：後台登入畫面 ---
-        const AdminLoginView = ({ setView, setIsAuthenticated, user }) => {
+        const AdminLoginView = ({ setView, authError }) => {
             const [isLoading, setIsLoading] = useState(false);
-            const [error, setError] = useState('');
+            const [localError, setLocalError] = useState('');
 
             const handleGoogleLogin = async () => {
                 setIsLoading(true);
-                setError('');
+                setLocalError('');
                 const auth = getAuth();
                 const provider = new GoogleAuthProvider();
+                // 強制使用者選擇帳號，避免自動登入錯誤帳號
+                provider.setCustomParameters({ prompt: 'select_account' });
                 
                 try {
-                    const result = await signInWithPopup(auth, provider);
-                    const emailHash = await sha256(result.user.email);
-                    
-                    if (emailHash === ADMIN_HASH) {
-                        setIsAuthenticated(true);
-                        setView('admin');
-                    } else {
-                        await signOut(auth); // 登出非法帳號
-                        setError('身分驗證失敗：您沒有管理員權限。');
-                    }
+                    await signInWithPopup(auth, provider);
+                    // 登入後的邏輯會由 App 元件中的 onAuthStateChanged 處理
                 } catch (e) {
-                    setError('登入過程發生錯誤：' + e.message);
-                } finally {
+                    setLocalError('登入過程發生錯誤：' + e.message);
                     setIsLoading(false);
                 }
             };
+
+            const displayError = authError || localError;
 
             return (
                 <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4">
@@ -109,9 +104,9 @@
                                 使用 Google 帳號登入
                             </button>
                             
-                            {error && (
-                                <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm font-bold rounded-lg border border-red-100 italic">
-                                    <i className="fa-solid fa-circle-exclamation mr-1"></i> {error}
+                            {displayError && (
+                                <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm font-bold rounded-lg border border-red-100">
+                                    <i className="fa-solid fa-circle-exclamation mr-1"></i> {displayError}
                                 </div>
                             )}
                             
@@ -126,7 +121,7 @@
             );
         };
 
-        // --- 視圖：前台首頁 (同前) ---
+        // --- 視圖：前台首頁 ---
         const HomeView = ({ products, setView, setActiveProduct }) => (
             <div>
                 <header className="relative pt-32 pb-24 overflow-hidden bg-sakura-50">
@@ -166,7 +161,7 @@
             </div>
         );
 
-        // --- 視圖：前台詳細頁 (同前) ---
+        // --- 視圖：前台詳細頁 ---
         const ProductDetailView = ({ product, setView }) => {
             if(!product) return null;
             const parsedIngredients = product.ingredientsText ? product.ingredientsText.split('\n').filter(line => line.trim()).map(line => {
@@ -256,10 +251,10 @@
             return (
                 <div className="min-h-screen bg-slate-100">
                     <nav className="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50">
-                        <div className="font-bold">內容管理系統</div>
+                        <div className="font-bold text-sakura-500">內容管理後台</div>
                         <div className="flex gap-4">
-                            <button onClick={() => setView('home')} className="text-sm bg-slate-700 px-3 py-1 rounded">查看前台</button>
-                            <button onClick={handleSignOut} className="text-sm bg-red-600 px-3 py-1 rounded">登出</button>
+                            <button onClick={() => setView('home')} className="text-sm bg-slate-700 px-3 py-1 rounded hover:bg-slate-600 transition">查看前台</button>
+                            <button onClick={handleSignOut} className="text-sm bg-red-600 px-3 py-1 rounded hover:bg-red-700 transition">登出</button>
                         </div>
                     </nav>
                     <div className="max-w-5xl mx-auto p-6">
@@ -267,39 +262,64 @@
                             <div className="bg-white rounded-xl p-6 shadow-sm">
                                 <div className="flex justify-between items-center mb-6">
                                     <h2 className="text-xl font-bold">產品列表</h2>
-                                    <button onClick={() => setFormData({brand:"",name:"",category:"常備藥",classification:"第2類醫藥品",image:"",price:"",tags:"",description:"",alert:"",ingredientsText:"",dosage:"",warnings:"",pharmacist:""})} className="bg-sakura-500 text-white px-4 py-2 rounded-lg font-bold">+ 新增</button>
+                                    <button onClick={() => setFormData({brand:"",name:"",category:"常備藥",classification:"第2類醫藥品",image:"",price:"",tags:"",description:"",alert:"",ingredientsText:"",dosage:"",warnings:"",pharmacist:""})} className="bg-sakura-500 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-sakura-600 transition">+ 新增藥品</button>
                                 </div>
                                 <div className="divide-y">
                                     {products.map(p => (
-                                        <div key={p.id} className="py-4 flex justify-between items-center">
+                                        <div key={p.id} className="py-4 flex justify-between items-center hover:bg-slate-50 px-2 rounded transition">
                                             <div>
                                                 <div className="text-xs text-slate-400">{p.brand}</div>
-                                                <div className="font-bold">{p.name}</div>
+                                                <div className="font-bold text-slate-800">{p.name}</div>
                                             </div>
                                             <div className="flex gap-4">
-                                                <button onClick={() => setFormData(p)} className="text-blue-500 text-sm">編輯</button>
-                                                <button onClick={() => handleDelete(p.id)} className="text-red-500 text-sm">刪除</button>
+                                                <button onClick={() => setFormData(p)} className="text-blue-500 text-sm font-medium hover:underline">編輯</button>
+                                                <button onClick={() => handleDelete(p.id)} className="text-red-500 text-sm font-medium hover:underline">刪除</button>
                                             </div>
                                         </div>
                                     ))}
+                                    {products.length === 0 && <div className="py-10 text-center text-slate-400">目前沒有藥品資料</div>}
                                 </div>
                             </div>
                         ) : (
                             <form onSubmit={handleSave} className="bg-white rounded-xl p-6 shadow-sm space-y-4">
-                                <h2 className="text-xl font-bold mb-4 border-b pb-2">編輯資料</h2>
+                                <h2 className="text-xl font-bold mb-4 border-b pb-2">編輯藥品資料</h2>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <input placeholder="品牌" value={formData.brand} onChange={e=>setFormData({...formData,brand:e.target.value})} className="border p-2 rounded" required />
-                                    <input placeholder="名稱" value={formData.name} onChange={e=>setFormData({...formData,name:e.target.value})} className="border p-2 rounded" required />
-                                    <input placeholder="圖片網址" value={formData.image} onChange={e=>setFormData({...formData,image:e.target.value})} className="border p-2 rounded" />
-                                    <input placeholder="價格" value={formData.price} onChange={e=>setFormData({...formData,price:e.target.value})} className="border p-2 rounded" />
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">品牌</label>
+                                        <input placeholder="例如：大正製藥" value={formData.brand} onChange={e=>setFormData({...formData,brand:e.target.value})} className="w-full border p-2 rounded focus:ring-1 focus:ring-sakura-500 outline-none" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">名稱</label>
+                                        <input placeholder="例如：百保能" value={formData.name} onChange={e=>setFormData({...formData,name:e.target.value})} className="w-full border p-2 rounded focus:ring-1 focus:ring-sakura-500 outline-none" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">圖片網址</label>
+                                        <input placeholder="https://..." value={formData.image} onChange={e=>setFormData({...formData,image:e.target.value})} className="w-full border p-2 rounded focus:ring-1 focus:ring-sakura-500 outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">價格</label>
+                                        <input placeholder="例如：¥1,500" value={formData.price} onChange={e=>setFormData({...formData,price:e.target.value})} className="w-full border p-2 rounded focus:ring-1 focus:ring-sakura-500 outline-none" />
+                                    </div>
                                 </div>
-                                <textarea placeholder="描述" value={formData.description} onChange={e=>setFormData({...formData,description:e.target.value})} className="w-full border p-2 rounded" rows="2"></textarea>
-                                <textarea placeholder="成分(名稱|含量|說明)" value={formData.ingredientsText} onChange={e=>setFormData({...formData,ingredientsText:e.target.value})} className="w-full border p-2 rounded font-mono text-xs" rows="4"></textarea>
-                                <textarea placeholder="用法" value={formData.dosage} onChange={e=>setFormData({...formData,dosage:e.target.value})} className="w-full border p-2 rounded" rows="2"></textarea>
-                                <textarea placeholder="禁忌" value={formData.warnings} onChange={e=>setFormData({...formData,warnings:e.target.value})} className="w-full border p-2 rounded" rows="2"></textarea>
-                                <div className="flex justify-end gap-3 pt-4">
-                                    <button type="button" onClick={()=>setFormData(null)} className="px-4 py-2 border rounded font-bold">取消</button>
-                                    <button type="submit" className="px-6 py-2 bg-sakura-500 text-white rounded font-bold">儲存</button>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">描述</label>
+                                    <textarea placeholder="簡單介紹適用的主要症狀" value={formData.description} onChange={e=>setFormData({...formData,description:e.target.value})} className="w-full border p-2 rounded focus:ring-1 focus:ring-sakura-500 outline-none" rows="2"></textarea>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">成分解析 (格式：名稱|含量|說明)</label>
+                                    <textarea placeholder="每一行一個成分，例如：布洛芬|150mg|止痛效果" value={formData.ingredientsText} onChange={e=>setFormData({...formData,ingredientsText:e.target.value})} className="w-full border p-2 rounded font-mono text-xs focus:ring-1 focus:ring-sakura-500 outline-none" rows="4"></textarea>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">用法用量</label>
+                                    <textarea placeholder="建議服用量與次數" value={formData.dosage} onChange={e=>setFormData({...formData,dosage:e.target.value})} className="w-full border p-2 rounded focus:ring-1 focus:ring-sakura-500 outline-none" rows="2"></textarea>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">禁忌對象</label>
+                                    <textarea placeholder="每一行一個對象，例如：未滿15歲者" value={formData.warnings} onChange={e=>setFormData({...formData,warnings:e.target.value})} className="w-full border p-2 rounded focus:ring-1 focus:ring-sakura-500 outline-none" rows="2"></textarea>
+                                </div>
+                                <div className="flex justify-end gap-3 pt-4 border-t">
+                                    <button type="button" onClick={()=>setFormData(null)} className="px-4 py-2 border rounded font-bold hover:bg-slate-50 transition">取消</button>
+                                    <button type="submit" className="px-8 py-2 bg-sakura-500 text-white rounded font-bold shadow hover:bg-sakura-600 transition">儲存資料</button>
                                 </div>
                             </form>
                         )}
@@ -314,6 +334,7 @@
             const [products, setProducts] = useState([]);
             const [activeProduct, setActiveProduct] = useState(null);
             const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [authError, setAuthError] = useState('');
             const [dbReady, setDbReady] = useState(false);
 
             useEffect(() => {
@@ -329,6 +350,7 @@
                 const auth = getAuth(app);
                 window.db = getFirestore(app);
 
+                // 初始狀態為匿名登入，確保首頁能看到資料
                 signInAnonymously(auth).catch(e => console.error(e));
 
                 onAuthStateChanged(auth, async (u) => {
@@ -336,7 +358,16 @@
                         const emailHash = await sha256(u.email);
                         if (emailHash === ADMIN_HASH) {
                             setIsAuthenticated(true);
+                            setAuthError('');
+                        } else {
+                            // 身分不符，強制登出並給予提示
+                            setIsAuthenticated(false);
+                            const maskedEmail = u.email.substring(0, 3) + "****";
+                            setAuthError(`身分驗證失敗：帳號 ${maskedEmail} 沒有管理員權限。`);
+                            await signOut(auth);
                         }
+                    } else {
+                        setIsAuthenticated(false);
                     }
                     setDbReady(true);
                 });
@@ -350,8 +381,11 @@
             }, [dbReady]);
 
             const renderContent = () => {
-                if (view === 'admin') return <AdminDashboard products={products} setView={setView} />;
-                if (view === 'adminLogin') return <AdminLoginView setView={setView} setIsAuthenticated={setIsAuthenticated} />;
+                if (view === 'admin' && isAuthenticated) return <AdminDashboard products={products} setView={setView} />;
+                // 如果點選後台但未驗證，顯示登入頁面
+                if (view === 'admin' || view === 'adminLogin') {
+                    return <AdminLoginView setView={setView} authError={authError} />;
+                }
                 if (view === 'productDetail') return <ProductDetailView product={activeProduct} setView={setView} />;
                 return <HomeView products={products} setView={setView} setActiveProduct={setActiveProduct} />;
             };
@@ -361,12 +395,16 @@
                     {view !== 'admin' && view !== 'adminLogin' && (
                         <nav className="fixed w-full z-50 top-0 bg-white/90 backdrop-blur shadow-sm">
                             <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
-                                <div onClick={() => setView('home')} className="cursor-pointer flex items-center">
-                                    <i className="fa-solid fa-leaf text-sakura-500 text-2xl mr-2"></i>
-                                    <span className="font-bold text-2xl">日藥<span className="text-sakura-500">指南</span></span>
+                                <div onClick={() => setView('home')} className="cursor-pointer flex items-center group">
+                                    <i className="fa-solid fa-leaf text-sakura-500 text-2xl mr-2 group-hover:rotate-12 transition-transform"></i>
+                                    <span className="font-bold text-2xl text-slate-800">日藥<span className="text-sakura-500">指南</span></span>
                                 </div>
-                                <button onClick={() => setView(isAuthenticated ? 'admin' : 'adminLogin')} className="bg-slate-800 text-white px-4 py-2 rounded-full text-sm">
-                                    <i className="fa-solid fa-gear mr-1"></i> 後台
+                                <button 
+                                    onClick={() => setView(isAuthenticated ? 'admin' : 'adminLogin')} 
+                                    className={`${isAuthenticated ? 'bg-sakura-500' : 'bg-slate-800'} text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition active:scale-95`}
+                                >
+                                    <i className={`fa-solid ${isAuthenticated ? 'fa-user-shield' : 'fa-gear'} mr-1`}></i> 
+                                    {isAuthenticated ? '進入管理' : '後台管理'}
                                 </button>
                             </div>
                         </nav>
@@ -374,6 +412,7 @@
                     <div className="flex-grow">{renderContent()}</div>
                     <footer className="bg-slate-900 text-slate-500 py-10 text-center text-xs">
                         <p>&copy; 2026 日藥指南. All rights reserved.</p>
+                        <p className="mt-2 opacity-50">本站資訊僅供參考，不具醫療診斷效力</p>
                     </footer>
                 </div>
             );
