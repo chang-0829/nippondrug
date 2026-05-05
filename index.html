@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日藥指南 | 日本藥妝與常備藥知識分享</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sakura: { 50: '#fdf2f8', 100: '#fce7f3', 500: '#ec4899', 600: '#db2777' },
+                        // 保留醫療輔助色用於警語等區塊
+                        medical: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' } 
+                    },
+                    fontFamily: { sans: ['"Noto Sans TC"', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .hover-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .hover-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        html { scroll-behavior: smooth; }
+        .content-section { scroll-margin-top: 100px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 初始資料庫 (內建 EVE A 與 大正百保能 兩款常見藥物作為範例)
+        const initialProducts = [
+            {
+                id: 1,
+                brand: "SSP 株式會社 (白兔牌)",
+                name: "EVE A錠 (白盒)",
+                category: "解熱鎮痛 (止痛藥)",
+                classification: "第 2 類醫藥品",
+                image: "https://images.unsplash.com/photo-1584308666744-24d5e4708709?auto=format&fit=crop&w=800&q=80",
+                price: "¥650 - ¥800",
+                tags: "頭痛,生理痛,牙痛,小顆粒易吞服",
+                description: "日本最暢銷的解熱鎮痛劑之一。以「布洛芬 (Ibuprofen)」為核心成分，能有效抑制引發疼痛與發燒的物質產生。特別針對生理痛與頭痛設計。",
+                alert: "本藥品含有鎮靜成分，服用後可能產生睡意，請勿駕駛車輛或操作危險機械。15歲以下兒童、孕婦及氣喘患者禁止服用。",
+                ingredientsText: "布洛芬|150 mg|非類固醇消炎止痛藥 (NSAID)。能阻斷體內前列腺素合成，發揮解熱與鎮痛效果。\n烯丙基異丙基乙醯脲|60 mg|一種溫和的鎮靜劑。能緩和因疼痛引發的焦慮，輔助並增強止痛效果。(※會導致嗜睡)\n無水咖啡因|80 mg|收縮腦部擴張的血管，針對緩解頭痛有顯著輔助效果。",
+                dosage: "成人 (15歲以上) 每次 2 錠。每日最多 3 次為限，每次服藥請間隔 4 小時以上。請搭配溫水吞服，盡量避免空腹服用。",
+                warnings: "未滿 15 歲之兒童與青少年\n預產期在 12 週內的孕婦\n曾因服用本藥引起氣喘或過敏者",
+                pharmacist: "「EVE系列之所以紅，是因為它加了鎮靜劑和咖啡因，能大幅放大止痛的體感效果，對偏頭痛和嚴重經痛非常有效。但要注意，鎮靜成分會造成明顯嗜睡，如果要開車或考試，這款藥絕對不適合你！」"
+            },
+            {
+                id: 2,
+                brand: "大正製藥",
+                name: "百保能 Pabron Gold A 微粒",
+                category: "綜合感冒藥",
+                classification: "指定第 2 類醫藥品",
+                image: "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?auto=format&fit=crop&w=800&q=80",
+                price: "¥1,200 - ¥1,500",
+                tags: "流鼻水,咳嗽,發燒,常備藥",
+                description: "台灣人最愛買的日本感冒藥。內含多種有效成分，能全面緩解感冒的各種初期症狀（如咳嗽、痰、喉嚨痛、打噴嚏、流鼻水）。微粒包裝方便攜帶。",
+                alert: "含有可待因(Codeine)衍生衍生物，可能引發嚴重過敏或成癮風險，不可長期服用。未滿12歲兒童絕對禁止服用！",
+                ingredientsText: "對乙醯氨基酚|300 mg|溫和的退燒止痛成分，緩解發燒、頭痛與喉嚨痛。\n二氫可待因|8 mg|強效中樞鎮咳成分，能有效壓制劇烈咳嗽。(※含成癮性)\n鹽酸甲基麻黃鹼|20 mg|擴張支氣管，使呼吸順暢，緩解咳嗽。",
+                dosage: "成人 (15歲以上) 每次 1 包，12~14歲每次 2/3 包。每日 3 次，請盡量於飯後 30 分鐘內搭配常溫水服用。",
+                warnings: "未滿 12 歲之兒童禁止服用\n對本藥或其成分過敏者\n正在服用其他感冒藥、鎮靜劑者",
+                pharmacist: "「這款感冒藥屬於『綜合型』，什麼症狀都能壓制一點。但請注意，它含有『二氫可待因』這類強效止咳成分，在台灣屬於管制用藥等級，絕對不能當作日常保養品吃，也不能給小朋友吃！感冒症狀超過三天未改善請務必就醫。」"
+            }
+        ];
+
+        // --- 共用元件：導覽列 ---
+        const Navbar = ({ setView }) => {
+            const [scrolled, setScrolled] = useState(false);
+            
+            useEffect(() => {
+                const handleScroll = () => setScrolled(window.scrollY > 10);
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            return (
+                <nav className={`fixed w-full z-50 top-0 transition-all duration-300 ${scrolled ? 'bg-white shadow-md' : 'bg-white/90 backdrop-blur-md'}`}>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center h-20">
+                            <div className="flex-shrink-0 flex items-center cursor-pointer" onClick={() => setView('home')}>
+                                <i className="fa-solid fa-leaf text-sakura-500 text-2xl mr-2"></i>
+                                <span className="font-bold text-2xl text-slate-800 tracking-wider">日藥<span className="text-sakura-500">指南</span></span>
+                            </div>
+                            <div className="hidden md:flex space-x-8 items-center">
+                                <a href="#" onClick={(e) => {e.preventDefault(); setView('home');}} className="text-slate-600 hover:text-sakura-500 font-medium">找藥物</a>
+                                <a href="#" onClick={(e) => e.preventDefault()} className="text-slate-600 hover:text-sakura-500 font-medium">成分辭典</a>
+                                <a href="#" onClick={(e) => e.preventDefault()} className="text-slate-600 hover:text-sakura-500 font-medium">用藥安全</a>
+                                <div className="relative">
+                                    <input type="text" placeholder="搜尋症狀或藥品..." className="bg-slate-100 rounded-full py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-sakura-100 text-sm w-48"/>
+                                    <i className="fa-solid fa-search absolute right-3 top-2.5 text-slate-400"></i>
+                                </div>
+                                <button onClick={() => setView('admin')} className="bg-slate-800 text-white px-4 py-2 rounded-full text-sm hover:bg-slate-700 transition">
+                                    <i className="fa-solid fa-gear mr-1"></i> 後台管理
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            );
+        };
+
+        // --- 視圖：前台首頁 ---
+        const HomeView = ({ products, setView, setActiveProduct }) => (
+            <div>
+                <header className="relative pt-32 pb-24 overflow-hidden bg-sakura-50">
+                    <div className="max-w-7xl mx-auto px-4 text-center">
+                        <span className="text-sakura-500 font-semibold tracking-wider text-sm mb-4 block uppercase">專業解析，安心用藥</span>
+                        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 leading-tight">
+                            看懂成分不踩雷 <br/>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sakura-500 to-orange-400">買對真正適合的常備藥</span>
+                        </h1>
+                        <p className="text-lg text-slate-600 mb-10 max-w-2xl mx-auto">
+                            從止痛藥成分解析、感冒藥適應症，到潛在副作用警告。我們提供最客觀的醫藥資訊，守護您與家人的健康。
+                        </p>
+                    </div>
+                </header>
+
+                <section className="py-16 bg-white min-h-screen">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center">
+                            <i className="fa-solid fa-kit-medical text-sakura-500 mr-3"></i> 藥品資訊庫
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {products.map(product => (
+                                <article key={product.id} onClick={() => { setActiveProduct(product); setView('productDetail'); }} 
+                                         className="bg-white rounded-2xl overflow-hidden shadow-sm hover-card border border-slate-100 flex flex-col cursor-pointer">
+                                    <div className="relative h-52 overflow-hidden bg-slate-50 flex justify-center items-center p-4 border-b border-slate-100">
+                                        <img src={product.image} alt={product.name} className="max-h-full object-contain rounded" />
+                                        <div className="absolute top-4 left-4 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
+                                            {product.classification}
+                                        </div>
+                                    </div>
+                                    <div className="p-6 flex-grow flex flex-col">
+                                        <div className="text-xs font-bold text-slate-400 mb-1">{product.brand}</div>
+                                        <h3 className="text-xl font-bold text-slate-900 mb-2 hover:text-sakura-500 line-clamp-2">{product.name}</h3>
+                                        <div className="flex flex-wrap gap-1 mb-3">
+                                            {product.tags.split(',').slice(0, 3).map((tag, i) => (
+                                                <span key={i} className="bg-sakura-50 text-sakura-600 px-2 py-0.5 rounded text-xs">{tag.trim()}</span>
+                                            ))}
+                                        </div>
+                                        <p className="text-slate-600 text-sm line-clamp-3 mt-auto">{product.description}</p>
+                                    </div>
+                                </article>
+                            ))}
+                            {products.length === 0 && <div className="col-span-3 text-center text-slate-500 py-10">目前尚無資料。</div>}
+                        </div>
+                    </div>
+                </section>
+            </div>
+        );
+
+        // --- 視圖：前台產品詳細頁 (藥物專業排版) ---
+        const ProductDetailView = ({ product, setView }) => {
+            if(!product) return null;
+
+            // 解析成分字串 (格式：名稱|劑量|說明 \n)
+            const parsedIngredients = product.ingredientsText ? product.ingredientsText.split('\n').filter(line => line.trim()).map(line => {
+                const parts = line.split('|');
+                return { name: parts[0] || '', amount: parts[1] || '', desc: parts[2] || '' };
+            }) : [];
+
+            // 解析禁忌字串
+            const parsedWarnings = product.warnings ? product.warnings.split('\n').filter(w => w.trim()) : [];
+
+            return (
+                <div className="bg-slate-50 min-h-screen">
+                    <div className="pt-24 pb-4 max-w-7xl mx-auto px-4">
+                        <button onClick={() => setView('home')} className="text-sm text-slate-500 hover:text-sakura-500 flex items-center transition-colors">
+                            <i className="fa-solid fa-arrow-left mr-2"></i> 返回藥品庫
+                        </button>
+                    </div>
+
+                    {/* Hero Section */}
+                    <section className="max-w-7xl mx-auto px-4 mb-8">
+                        <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-10">
+                            <div className="w-full md:w-2/5 flex flex-col items-center">
+                                <div className="relative w-full aspect-square bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-center p-8 border border-slate-100">
+                                    <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain rounded-lg shadow-sm" />
+                                    <div className="absolute top-4 left-4 bg-orange-500 text-white text-xs font-black px-3 py-1.5 rounded shadow-md">
+                                        {product.classification}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="w-full md:w-3/5 flex flex-col justify-center">
+                                <div className="text-sm font-bold text-slate-500 mb-2">{product.brand}</div>
+                                <h1 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight">{product.name}</h1>
+                                
+                                <div className="flex flex-wrap gap-2 mb-6">
+                                    {product.tags.split(',').map((tag, i) => (
+                                        <span key={i} className="bg-sakura-50 text-sakura-700 border border-sakura-200 px-3 py-1 rounded-full text-xs font-bold">{tag.trim()}</span>
+                                    ))}
+                                </div>
+
+                                <p className="text-slate-700 mb-6 leading-relaxed">{product.description}</p>
+
+                                {product.alert && (
+                                    <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
+                                        <div className="flex items-start">
+                                            <i className="fa-solid fa-triangle-exclamation text-red-500 mt-1 mr-3 text-lg"></i>
+                                            <div>
+                                                <h4 className="text-red-800 font-bold text-sm mb-1">用藥安全警語</h4>
+                                                <p className="text-red-700 text-xs leading-relaxed">{product.alert}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* 詳細內容區塊 */}
+                    <div className="max-w-7xl mx-auto px-4 pb-20 flex flex-col lg:flex-row gap-8">
+                        <div className="w-full lg:w-2/3 space-y-10">
+                            
+                            {/* 成分與功效 */}
+                            <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                                <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                                    <i className="fa-solid fa-pills text-sakura-500 mr-3"></i> 藥理成分與機轉
+                                </h2>
+                                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50 text-slate-700">
+                                            <tr>
+                                                <th className="px-4 py-3 font-bold border-b border-slate-200">有效成分</th>
+                                                <th className="px-4 py-3 font-bold border-b border-slate-200 w-24 text-right">含量</th>
+                                                <th className="px-4 py-3 font-bold border-b border-slate-200">作用機轉</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {parsedIngredients.map((ing, idx) => (
+                                                <tr key={idx} className="hover:bg-slate-50/50">
+                                                    <td className="px-4 py-4 font-bold text-slate-800">{ing.name}</td>
+                                                    <td className="px-4 py-4 text-right font-bold text-sakura-600 whitespace-nowrap">{ing.amount}</td>
+                                                    <td className="px-4 py-4 text-slate-600">{ing.desc}</td>
+                                                </tr>
+                                            ))}
+                                            {parsedIngredients.length === 0 && <tr><td colSpan="3" className="p-4 text-center text-slate-500">無成分資料</td></tr>}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            {/* 用法用量 */}
+                            <section className="bg-sakura-50 p-8 rounded-3xl border border-sakura-100">
+                                <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center">
+                                    <i className="fa-solid fa-clock text-sakura-500 mr-3"></i> 用法與用量
+                                </h2>
+                                <p className="text-slate-700 leading-relaxed font-medium">{product.dosage}</p>
+                            </section>
+
+                            {/* 禁忌與副作用 */}
+                            <section className="bg-white p-8 rounded-3xl shadow-sm border border-red-100 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+                                <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center text-red-600">
+                                    <i className="fa-solid fa-ban mr-3"></i> 禁忌：這些人絕對不能吃
+                                </h2>
+                                <ul className="space-y-2 text-slate-700 font-medium list-disc pl-6">
+                                    {parsedWarnings.map((w, i) => <li key={i}>{w}</li>)}
+                                    {parsedWarnings.length === 0 && <li className="text-slate-400 list-none">無特別註明</li>}
+                                </ul>
+                                <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                    <span className="font-bold text-slate-800">⚠️ 並用禁忌：</span>
+                                    <span className="text-sm text-slate-600 ml-2">服藥期間請勿與其他解熱鎮痛劑、感冒藥、鎮靜劑同時服用。服藥前後請勿飲酒。</span>
+                                </div>
+                            </section>
+
+                            {/* 藥師觀點 */}
+                            <section className="bg-slate-800 p-8 rounded-3xl text-white relative shadow-lg">
+                                <i className="fa-solid fa-quote-left text-5xl text-slate-700 absolute top-6 left-6"></i>
+                                <div className="relative z-10 pl-8">
+                                    <h2 className="text-xl font-bold mb-4 text-sakura-400 flex items-center">
+                                        <i className="fa-solid fa-user-doctor mr-2"></i> 駐站藥師點評
+                                    </h2>
+                                    <p className="text-slate-300 leading-relaxed italic">{product.pharmacist}</p>
+                                </div>
+                            </section>
+
+                        </div>
+
+                        {/* 側邊欄 (購買資訊) */}
+                        <div className="w-full lg:w-1/3">
+                            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden sticky top-24">
+                                <div className="bg-slate-100 text-slate-800 p-4 font-bold flex items-center border-b border-slate-200">
+                                    <i className="fa-solid fa-cart-shopping mr-2 text-sakura-500"></i> 日本購買資訊
+                                </div>
+                                <div className="p-6">
+                                    <p className="text-sm text-slate-500 mb-1">藥妝店未稅參考價</p>
+                                    <div className="text-3xl font-bold text-slate-900 mb-6">{product.price}</div>
+                                    
+                                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                                        <h4 className="font-bold text-blue-800 text-sm mb-2 flex items-center">
+                                            <i className="fa-solid fa-plane-arrival mr-2"></i> 台灣海關攜帶規定
+                                        </h4>
+                                        <p className="text-xs text-blue-700 leading-relaxed">
+                                            非處方藥（OTC）入境，每種至多 12 瓶(盒)，合計以不超過 36 瓶(盒)為限。僅供自用不可轉賣。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 視圖：後台管理系統 ---
+        const AdminDashboard = ({ products, setProducts, setView }) => {
+            const [formData, setFormData] = useState(null);
+
+            const handleEdit = (product) => setFormData({...product});
+            
+            const handleAddNew = () => setFormData({
+                id: Date.now(), brand: "", name: "", category: "常備藥", classification: "第 2 類醫藥品",
+                image: "", price: "", tags: "", description: "", alert: "", ingredientsText: "", dosage: "", warnings: "", pharmacist: ""
+            });
+
+            const handleDelete = (id) => {
+                if(confirm("確定要刪除這筆藥物資料嗎？")) setProducts(products.filter(p => p.id !== id));
+            };
+
+            const handleSave = (e) => {
+                e.preventDefault();
+                const isNew = !products.find(p => p.id === formData.id);
+                if(isNew) setProducts([formData, ...products]);
+                else setProducts(products.map(p => p.id === formData.id ? formData : p));
+                setFormData(null);
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-100 flex flex-col">
+                    <nav className="bg-slate-900 text-white p-4 shadow-md flex justify-between items-center">
+                        <div className="font-bold text-lg flex items-center">
+                            <i className="fa-solid fa-database text-sakura-500 mr-2"></i> 日藥指南 - 內容管理系統
+                        </div>
+                        <button onClick={() => setView('home')} className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-sm">返回前台</button>
+                    </nav>
+
+                    <div className="max-w-6xl mx-auto w-full p-6 flex-grow">
+                        {!formData ? (
+                            <div className="bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-slate-800">藥物資料庫管理</h2>
+                                    <button onClick={handleAddNew} className="bg-sakura-500 text-white px-4 py-2 rounded-lg hover:bg-sakura-600 font-bold">
+                                        + 新增藥物
+                                    </button>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse text-sm">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-200">
+                                                <th className="p-3 font-bold text-slate-600">品牌 / 名稱</th>
+                                                <th className="p-3 font-bold text-slate-600">醫藥品分級</th>
+                                                <th className="p-3 font-bold text-slate-600 text-right">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {products.map(p => (
+                                                <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50">
+                                                    <td className="p-3">
+                                                        <div className="text-xs text-slate-400">{p.brand}</div>
+                                                        <div className="font-bold text-slate-800">{p.name}</div>
+                                                    </td>
+                                                    <td className="p-3"><span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs">{p.classification}</span></td>
+                                                    <td className="p-3 text-right">
+                                                        <button onClick={() => handleEdit(p)} className="text-blue-500 hover:text-blue-700 mx-3"><i className="fa-solid fa-pen"></i> 編輯</button>
+                                                        <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700"><i className="fa-solid fa-trash"></i> 刪除</button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
+                                <div className="flex justify-between items-center mb-6 border-b pb-4">
+                                    <h2 className="text-2xl font-bold text-slate-800">編輯藥物資料</h2>
+                                    <button onClick={() => setFormData(null)} className="text-slate-500 hover:text-slate-800"><i className="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
+                                <form onSubmit={handleSave} className="space-y-5">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">藥廠/品牌</label>
+                                            <input required value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} className="w-full border rounded p-2 focus:ring-1 focus:ring-sakura-500 outline-none"/>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">藥物名稱</label>
+                                            <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border rounded p-2 focus:ring-1 outline-none"/>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">醫藥品分級</label>
+                                            <select value={formData.classification} onChange={e => setFormData({...formData, classification: e.target.value})} className="w-full border rounded p-2 outline-none">
+                                                <option value="第 1 類醫藥品">第 1 類醫藥品</option>
+                                                <option value="指定第 2 類醫藥品">指定第 2 類醫藥品</option>
+                                                <option value="第 2 類醫藥品">第 2 類醫藥品</option>
+                                                <option value="第 3 類醫藥品">第 3 類醫藥品</option>
+                                                <option value="醫藥部外品">醫藥部外品</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">標籤 (用逗號分隔)</label>
+                                            <input value={formData.tags} onChange={e => setFormData({...formData, tags: e.target.value})} placeholder="例: 頭痛,生理痛" className="w-full border rounded p-2 outline-none"/>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">參考價格</label>
+                                            <input value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full border rounded p-2 outline-none"/>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">圖片網址</label>
+                                            <input type="url" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} className="w-full border rounded p-2 outline-none"/>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">簡短描述 (適用症狀)</label>
+                                        <textarea required rows="2" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full border rounded p-2 outline-none"></textarea>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-red-600 mb-1">安全警語 (紅色提示框)</label>
+                                        <input value={formData.alert} onChange={e => setFormData({...formData, alert: e.target.value})} className="w-full border border-red-300 bg-red-50 rounded p-2 outline-none"/>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">成分表 (每行一個成分，格式：名稱|劑量|說明)</label>
+                                        <textarea rows="4" value={formData.ingredientsText} onChange={e => setFormData({...formData, ingredientsText: e.target.value})} placeholder="布洛芬|150 mg|有效止痛..." className="w-full border rounded p-2 outline-none font-mono text-sm bg-slate-50"></textarea>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">用法用量</label>
+                                            <textarea rows="3" value={formData.dosage} onChange={e => setFormData({...formData, dosage: e.target.value})} className="w-full border rounded p-2 outline-none"></textarea>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1">禁忌對象 (每行一項)</label>
+                                            <textarea rows="3" value={formData.warnings} onChange={e => setFormData({...formData, warnings: e.target.value})} placeholder="未滿15歲兒童\n孕婦" className="w-full border rounded p-2 outline-none"></textarea>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-1">藥師點評</label>
+                                        <textarea rows="2" value={formData.pharmacist} onChange={e => setFormData({...formData, pharmacist: e.target.value})} className="w-full border rounded p-2 outline-none bg-slate-50"></textarea>
+                                    </div>
+                                    <div className="flex justify-end space-x-3 pt-4 border-t">
+                                        <button type="button" onClick={() => setFormData(null)} className="px-6 py-2 border rounded text-slate-600 hover:bg-slate-50 font-bold">取消</button>
+                                        <button type="submit" className="px-6 py-2 bg-sakura-500 text-white rounded hover:bg-sakura-600 font-bold shadow">儲存藥物資料</button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 主程式 ---
+        const App = () => {
+            const [view, setView] = useState('home');
+            const [products, setProducts] = useState(initialProducts);
+            const [activeProduct, setActiveProduct] = useState(null);
+
+            // 確保切換頁面時滾動到最上方
+            useEffect(() => { window.scrollTo(0, 0); }, [view]);
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {view !== 'admin' && <Navbar setView={setView} />}
+                    <div className="flex-grow">
+                        {view === 'home' && <HomeView products={products} setView={setView} setActiveProduct={setActiveProduct} />}
+                        {view === 'productDetail' && <ProductDetailView product={activeProduct} setView={setView} />}
+                        {view === 'admin' && <AdminDashboard products={products} setProducts={setProducts} setView={setView} />}
+                    </div>
+
+                    {/* 免責聲明 Footer */}
+                    {view !== 'admin' && (
+                        <footer className="bg-slate-900 text-slate-300 py-12 border-t-4 border-sakura-500 mt-auto">
+                            <div className="max-w-7xl mx-auto px-4">
+                                <div className="text-center max-w-3xl mx-auto">
+                                    <h4 className="text-white font-bold mb-4 flex items-center justify-center">
+                                        <i className="fa-solid fa-triangle-exclamation text-yellow-500 mr-2"></i> 醫療免責聲明
+                                    </h4>
+                                    <p className="text-xs text-slate-400 leading-relaxed p-4 rounded bg-slate-800 border border-slate-700">
+                                        本網站提供之日本藥物資訊僅為外語包裝說明之翻譯與學術整理，供民眾教育與參考用途，<strong>絕對無法取代專業醫師之診斷或藥師之諮詢</strong>。本網站無進行任何藥品之販售或代購業務。服藥前請務必詳閱藥品實體仿單（說明書），若症狀未改善或有任何不適，請立即停藥並就醫。
+                                    </p>
+                                    <div className="mt-8 text-sm text-slate-500">
+                                        &copy; 2026 日藥指南. All rights reserved.
+                                    </div>
+                                </div>
+                            </div>
+                        </footer>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
