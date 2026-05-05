@@ -11,7 +11,7 @@
             theme: {
                 extend: {
                     colors: {
-                        sakura: { 50: '#fdf2f8', 100: '#fce7f3', 500: '#ec4899', 600: '#db2777' },
+                        sakura: { 50: '#fdf2f8', 100: '#fce7f3', 200: '#fbcfe8', 300: '#f9a8d4', 500: '#ec4899', 600: '#db2777' },
                         medical: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' } 
                     },
                     fontFamily: { sans: ['"Noto Sans TC"', 'sans-serif'] }
@@ -31,21 +31,21 @@
         .hover-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .hover-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
         html { scroll-behavior: smooth; }
-        .content-section { scroll-margin-top: 100px; }
+        .content-section { scroll-margin-top: 140px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .admin-sidebar-active { background-color: #ec4899; color: white; }
     </style>
 </head>
-<body>
+<body class="text-slate-800 antialiased">
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const { useState, useEffect, useCallback, useMemo } = React;
+        const { useState, useEffect, useCallback } = React;
 
         const ADMIN_HASH = "d5dbb48255049debcaa47af8d5ea8debe852462925c650a75b3756614e7ab1c6";
         const APP_ID = "nippondrug";
@@ -77,44 +77,25 @@
                 }
             };
 
-            const displayError = authError || localError;
-
             return (
                 <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4">
                     <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-                        <div className="flex justify-center mb-6 text-sakura-500 text-6xl">
-                            <i className="fa-solid fa-shield-halved"></i>
-                        </div>
+                        <div className="flex justify-center mb-6 text-sakura-500 text-6xl"><i className="fa-solid fa-shield-halved"></i></div>
                         <h2 className="text-3xl font-black text-slate-900 mb-2">管理員身分確認</h2>
                         <p className="text-slate-500 mb-8">請使用授權的 Google 帳號進行登入</p>
-                        
                         <div className="bg-white py-10 px-6 shadow-xl rounded-2xl border border-slate-200">
-                            <button 
-                                onClick={handleGoogleLogin}
-                                disabled={isLoading}
-                                className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 text-slate-700 font-bold py-3 px-4 rounded-lg hover:bg-slate-50 transition shadow-sm disabled:opacity-50"
-                            >
-                                {isLoading ? (
-                                    <i className="fa-solid fa-circle-notch fa-spin"></i>
-                                ) : (
-                                    <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" className="w-5 h-5" />
-                                )}
+                            <button onClick={handleGoogleLogin} disabled={isLoading} className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 text-slate-700 font-bold py-3 px-4 rounded-lg hover:bg-slate-50 transition shadow-sm disabled:opacity-50">
+                                {isLoading ? <i className="fa-solid fa-circle-notch fa-spin"></i> : <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" className="w-5 h-5" />}
                                 使用 Google 帳號登入
                             </button>
-                            
-                            {displayError && (
+                            {(authError || localError) && (
                                 <div className="mt-4 p-4 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 text-left">
-                                    <p className="font-bold flex items-center mb-2">
-                                        <i className="fa-solid fa-circle-exclamation mr-2"></i> 身分驗證未通過
-                                    </p>
-                                    <p className="whitespace-pre-wrap break-all opacity-80 leading-relaxed">{displayError}</p>
+                                    <p className="font-bold flex items-center mb-2"><i className="fa-solid fa-circle-exclamation mr-2"></i> 身分驗證未通過</p>
+                                    <p className="whitespace-pre-wrap break-all opacity-80 leading-relaxed">{authError || localError}</p>
                                 </div>
                             )}
-                            
                             <div className="mt-8 pt-6 border-t border-slate-100">
-                                <button onClick={() => setView('home')} className="text-slate-400 hover:text-sakura-500 text-sm font-medium">
-                                    <i className="fa-solid fa-arrow-left mr-1"></i> 返回前台首頁
-                                </button>
+                                <button onClick={() => setView('home')} className="text-slate-400 hover:text-sakura-500 text-sm font-medium"><i className="fa-solid fa-arrow-left mr-1"></i> 返回前台首頁</button>
                             </div>
                         </div>
                     </div>
@@ -127,17 +108,17 @@
             <div className="animate-in fade-in duration-500">
                 <header className="relative pt-32 pb-24 overflow-hidden bg-sakura-50">
                     <div className="max-w-7xl mx-auto px-4 text-center">
-                        <span className="text-sakura-500 font-semibold tracking-wider text-sm mb-4 block uppercase tracking-widest">專業解析，安心用藥</span>
+                        <span className="text-sakura-500 font-semibold tracking-wider text-sm mb-4 block uppercase tracking-widest">專業解析，安心選購</span>
                         <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">
-                            日本藥妝知識庫 <br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sakura-500 to-orange-400">成分解析與購藥指南</span>
+                            日本藥妝與保養品知識庫 <br/>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sakura-500 to-orange-400">成分解析與評價指南</span>
                         </h1>
                     </div>
                 </header>
 
                 <section className="py-16 bg-white min-h-screen">
                     <div className="max-w-7xl mx-auto px-4 text-center mb-10">
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2">藥品解析目錄</h2>
+                        <h2 className="text-2xl font-bold text-slate-900 mb-2">產品解析目錄</h2>
                         <div className="w-12 h-1 bg-sakura-500 mx-auto rounded-full"></div>
                     </div>
                     <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -145,110 +126,335 @@
                             <article key={product.id} onClick={() => { setActiveProduct(product); setView('productDetail'); }} 
                                      className="bg-white rounded-2xl overflow-hidden shadow-sm hover-card border border-slate-100 flex flex-col cursor-pointer">
                                 <div className="relative h-52 overflow-hidden bg-slate-50 flex justify-center items-center p-4 border-b border-slate-100">
-                                    <img src={product.image || "https://via.placeholder.com/300?text=No+Image"} alt={product.name} className="max-h-full object-contain rounded" />
-                                    <div className="absolute top-4 left-4 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
+                                    <img src={product.image || "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=400&q=80"} alt={product.name} className="max-h-full object-contain rounded" />
+                                    <div className="absolute top-4 left-4 bg-sakura-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
                                         {product.classification}
                                     </div>
                                 </div>
                                 <div className="p-6 flex-grow flex flex-col">
                                     <div className="text-xs font-bold text-slate-400 mb-1">{product.brand}</div>
                                     <h3 className="text-xl font-bold text-slate-900 mb-2 hover:text-sakura-500 line-clamp-2">{product.name}</h3>
-                                    <p className="text-slate-600 text-sm line-clamp-3 mt-auto italic">{product.description}</p>
+                                    <div className="flex flex-wrap gap-1 mb-3">
+                                        {(product.tags ? product.tags.split(',') : []).slice(0,3).map((tag, i) => (
+                                            <span key={i} className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px]">{tag.trim()}</span>
+                                        ))}
+                                    </div>
+                                    <p className="text-slate-600 text-sm line-clamp-3 mt-auto">{product.description}</p>
                                 </div>
                             </article>
                         ))}
-                        {products.length === 0 && (
-                            <div className="col-span-full text-center py-20 text-slate-400 italic">目前尚無藥品資料，請進入後台新增</div>
-                        )}
+                        {products.length === 0 && <div className="col-span-full text-center py-20 text-slate-400 italic">目前尚無資料，請進入後台新增</div>}
                     </div>
                 </section>
             </div>
         );
 
-        // --- 視圖：前台詳細頁 ---
+        // --- 視圖：前台詳細頁 (復刻自 test.html) ---
         const ProductDetailView = ({ product, setView }) => {
+            const [activeTab, setActiveTab] = useState('analysis');
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    const sections = ['analysis', 'usage', 'review', 'shopping'];
+                    let current = sections[0];
+                    for (const id of sections) {
+                        const element = document.getElementById(id);
+                        if (element && window.scrollY >= (element.offsetTop - 160)) {
+                            current = id;
+                        }
+                    }
+                    setActiveTab(current);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
             if(!product) return null;
-            const parsedIngredients = product.ingredientsText ? product.ingredientsText.split('\n').filter(line => line.trim()).map(line => {
+
+            // 輔助解析資料的函數
+            const parseList = (text) => text ? text.split('\n').filter(t => t.trim()) : [];
+            const tags = product.tags ? product.tags.split(',').filter(t => t.trim()) : [];
+            const coreFeatures = parseList(product.coreFeatures);
+            const ingredients = parseList(product.ingredientsText).map(line => {
                 const parts = line.split('|');
-                return { name: parts[0] || '', amount: parts[1] || '', desc: parts[2] || '' };
-            }) : [];
-            const parsedWarnings = product.warnings ? product.warnings.split('\n').filter(w => w.trim()) : [];
+                return { name: parts[0] || '', desc: parts[1] || '', safety: parts[2] || '高 / 安全' };
+            });
+            const suitableFor = parseList(product.suitableFor);
+            const notSuitableFor = parseList(product.notSuitableFor);
+            const dosageSteps = parseList(product.dosageSteps).map(line => {
+                const parts = line.split('|');
+                return { title: parts[0] || '', desc: parts[1] || '' };
+            });
+
             return (
-                <div className="bg-slate-50 min-h-screen animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="pt-24 pb-4 max-w-7xl mx-auto px-4">
-                        <button onClick={() => setView('home')} className="text-sm text-slate-500 hover:text-sakura-500 flex items-center font-bold">
-                            <i className="fa-solid fa-arrow-left mr-2"></i> 返回目錄
-                        </button>
+                <div className="bg-slate-50 min-h-screen animate-in slide-in-from-bottom-4 duration-500 pb-20">
+                    {/* 麵包屑導覽 */}
+                    <div className="pt-24 pb-4 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <nav className="flex text-sm text-slate-500" aria-label="Breadcrumb">
+                            <ol className="inline-flex items-center space-x-1 md:space-x-3">
+                                <li className="inline-flex items-center">
+                                    <button onClick={() => setView('home')} className="hover:text-sakura-500 transition-colors flex items-center">
+                                        <i className="fa-solid fa-home mr-2"></i>首頁
+                                    </button>
+                                </li>
+                                <li>
+                                    <div className="flex items-center">
+                                        <i className="fa-solid fa-chevron-right text-xs mx-2"></i>
+                                        <span className="hover:text-sakura-500 transition-colors cursor-pointer">{product.classification}</span>
+                                    </div>
+                                </li>
+                                <li aria-current="page">
+                                    <div className="flex items-center">
+                                        <i className="fa-solid fa-chevron-right text-xs mx-2"></i>
+                                        <span className="text-slate-800 font-medium line-clamp-1">{product.name}</span>
+                                    </div>
+                                </li>
+                            </ol>
+                        </nav>
                     </div>
-                    <section className="max-w-7xl mx-auto px-4 mb-8">
+
+                    {/* 產品簡介區塊 (Product Hero) */}
+                    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
                         <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-10">
-                            <div className="w-full md:w-2/5 flex items-center justify-center p-8 bg-slate-50 rounded-2xl">
-                                <img src={product.image || "https://via.placeholder.com/300?text=No+Image"} className="max-h-[300px] object-contain rounded-lg" />
+                            
+                            {/* 產品圖片 (左側) */}
+                            <div className="w-full md:w-2/5 flex flex-col items-center">
+                                <div className="relative w-full aspect-square bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-center p-8 border border-slate-100">
+                                    <img src={product.image || "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80"} alt={product.name} className="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-500" />
+                                </div>
                             </div>
-                            <div className="w-full md:w-3/5">
-                                <div className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">{product.brand}</div>
-                                <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">{product.name}</h1>
-                                <div className="bg-orange-500 text-white text-xs font-black px-3 py-1 inline-block rounded mb-6 shadow-sm">{product.classification}</div>
-                                <p className="text-slate-700 leading-relaxed mb-6 font-medium">{product.description}</p>
-                                {product.alert && (
-                                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
-                                        <p className="text-red-700 text-sm font-bold flex items-center">
-                                            <i className="fa-solid fa-circle-exclamation mr-2"></i> 安全警語：{product.alert}
-                                        </p>
+
+                            {/* 產品資訊 (右側) */}
+                            <div className="w-full md:w-3/5 flex flex-col justify-center">
+                                <div className="text-sm font-bold text-sakura-500 mb-2 tracking-wider">{product.brand}</div>
+                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 leading-tight">
+                                    {product.name}
+                                </h1>
+                                
+                                <div className="flex flex-wrap items-center gap-4 mb-6">
+                                    <div className="flex items-center text-yellow-400">
+                                        <i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star-half-stroke"></i>
+                                        <span className="text-slate-600 font-medium ml-2 text-sm">{product.rating || '4.8'} ({product.reviewCount || '128'}則專家與用戶評價)</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 mb-6">
+                                    {tags.map((tag, i) => (
+                                        <span key={i} className="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded-full text-xs font-medium">{tag.trim()}</span>
+                                    ))}
+                                </div>
+
+                                <p className="text-slate-600 mb-8 leading-relaxed whitespace-pre-wrap">{product.description}</p>
+
+                                {coreFeatures.length > 0 && (
+                                    <div className="bg-slate-50 rounded-xl p-4 mb-8 border border-slate-100">
+                                        <div className="font-bold text-slate-800 text-sm mb-2 flex items-center">
+                                            <i className="fa-solid fa-flask text-sakura-500 mr-2"></i> 核心作用亮點
+                                        </div>
+                                        <ul className="text-sm text-slate-600 space-y-1">
+                                            {coreFeatures.map((feat, i) => (
+                                                <li key={i}><i className="fa-solid fa-check text-green-500 mr-2"></i> <b>{feat.split('：')[0]}</b>{feat.includes('：') ? '：' + feat.split('：').slice(1).join('：') : ''}</li>
+                                            ))}
+                                        </ul>
                                     </div>
                                 )}
+
+                                <div className="flex items-center gap-4 mt-auto">
+                                    <button className="bg-sakura-500 hover:bg-sakura-600 text-white font-medium py-3 px-8 rounded-full transition-colors shadow-lg shadow-sakura-500/30 flex-grow md:flex-grow-0 flex items-center justify-center">
+                                        <i className="fa-regular fa-bookmark mr-2"></i> 收藏此產品
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </section>
-                    <div className="max-w-7xl mx-auto px-4 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-8 text-sm">
-                        <div className="lg:col-span-2 space-y-8">
-                            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                                <h3 className="text-xl font-black mb-6 flex items-center text-slate-800 underline decoration-sakura-500 underline-offset-8">
-                                    <i className="fa-solid fa-pills text-sakura-500 mr-3"></i> 成分深度解析
-                                </h3>
-                                <div className="overflow-hidden border border-slate-100 rounded-xl">
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-slate-500 text-xs font-black">
-                                            <tr><th className="p-4">成分名稱</th><th className="p-4 text-right">含量</th><th className="p-4">作用說明</th></tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                            {parsedIngredients.map((ing, i) => (
-                                                <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                                    <td className="p-4 font-bold text-slate-800">{ing.name}</td>
-                                                    <td className="p-4 text-right font-black text-sakura-500">{ing.amount}</td>
-                                                    <td className="p-4 text-slate-500 leading-relaxed">{ing.desc}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div className="bg-sakura-50 p-8 rounded-3xl border border-sakura-100 shadow-inner">
-                                <h3 className="text-lg font-black mb-3 flex items-center text-sakura-700">
-                                    <i className="fa-solid fa-clock mr-3"></i> 用法用量與建議
-                                </h3>
-                                <p className="text-slate-700 leading-relaxed font-bold">{product.dosage}</p>
+
+                    {/* 頁籤導覽 (Sticky 效果) */}
+                    <div className="sticky top-20 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm mb-8 transition-all">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex overflow-x-auto no-scrollbar space-x-8">
+                                <a href="#analysis" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='analysis' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>成分全解析</a>
+                                <a href="#usage" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='usage' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>使用方式與建議</a>
+                                <a href="#review" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='review' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>專家綜合評價</a>
+                                <a href="#shopping" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='shopping' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>購買資訊</a>
                             </div>
                         </div>
-                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-fit">
-                            <h3 className="text-lg font-black mb-4 flex items-center text-red-600 border-b pb-2 border-red-50">
-                                <i className="fa-solid fa-ban mr-3"></i> 禁忌與不適用對象
-                            </h3>
-                            <ul className="space-y-3">
-                                {parsedWarnings.map((w, i) => (
-                                    <li key={i} className="flex items-start gap-3 text-slate-600 font-medium">
-                                        <i className="fa-solid fa-xmark text-red-400 mt-1"></i>
-                                        <span>{w}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                    </div>
+
+                    {/* 內容主體區塊 */}
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex flex-col lg:flex-row gap-10">
+                            
+                            {/* 左側主內容 */}
+                            <div className="w-full lg:w-2/3 space-y-16">
+                                
+                                {/* 成分解析 */}
+                                <section id="analysis" className="content-section">
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                                        <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 全成分科學解析
+                                    </h2>
+                                    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                                        <table className="w-full text-left text-sm">
+                                            <thead className="bg-slate-50 text-slate-700">
+                                                <tr>
+                                                    <th className="px-6 py-4 font-bold border-b border-slate-200">成分名稱</th>
+                                                    <th className="px-6 py-4 font-bold border-b border-slate-200">主要功效與機轉</th>
+                                                    <th className="px-6 py-4 font-bold border-b border-slate-200 w-24">標籤/安心度</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {ingredients.map((ing, i) => (
+                                                    <tr key={i} className="hover:bg-slate-50/50">
+                                                        <td className="px-6 py-4">
+                                                            <div className="font-bold text-slate-800">{ing.name}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-slate-600">{ing.desc}</td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`px-2 py-1 rounded text-xs font-bold ${ing.safety.includes('注意')||ing.safety.includes('中') ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{ing.safety}</span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {ingredients.length === 0 && <tr><td colSpan="3" className="px-6 py-8 text-center text-slate-400">尚無成分資料</td></tr>}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+
+                                {/* 使用方式與建議 */}
+                                <section id="usage" className="content-section">
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                                        <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 使用方式與受眾建議
+                                    </h2>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                        <div className="bg-sakura-50 rounded-2xl p-6 border border-sakura-100">
+                                            <h3 className="font-bold text-sakura-600 text-lg mb-3 flex items-center"><i className="fa-regular fa-face-smile mr-2"></i> 最適合這些人</h3>
+                                            <ul className="space-y-2 text-slate-700">
+                                                {suitableFor.map((item, i) => <li key={i}><i className="fa-solid fa-check text-sakura-500 mr-2"></i> {item}</li>)}
+                                                {suitableFor.length===0 && <li className="text-slate-400 italic">無特定建議</li>}
+                                            </ul>
+                                        </div>
+                                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                                            <h3 className="font-bold text-slate-600 text-lg mb-3 flex items-center"><i className="fa-regular fa-face-frown mr-2"></i> 較不適合/需注意</h3>
+                                            <ul className="space-y-2 text-slate-700">
+                                                {notSuitableFor.map((item, i) => <li key={i}><i className="fa-solid fa-xmark text-slate-400 mr-2"></i> {item}</li>)}
+                                                {notSuitableFor.length===0 && <li className="text-slate-400 italic">無特定禁忌</li>}
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    {dosageSteps.length > 0 && (
+                                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                            <h3 className="font-bold text-slate-800 mb-4 text-lg">💡 建議用法步驟</h3>
+                                            {dosageSteps.map((step, i) => (
+                                                <div key={i} className={`flex ${i !== dosageSteps.length-1 ? 'mb-4' : ''}`}>
+                                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sakura-100 text-sakura-500 flex items-center justify-center font-bold mr-4">{i+1}</div>
+                                                    <div>
+                                                        <p className="text-slate-700 font-medium">{step.title}</p>
+                                                        <p className="text-sm text-slate-500 mt-1">{step.desc}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </section>
+
+                                {/* 專家評論 */}
+                                <section id="review" className="content-section">
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                                        <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 專家綜合評價
+                                    </h2>
+                                    
+                                    <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm relative">
+                                        <i className="fa-solid fa-quote-left text-4xl text-sakura-100 absolute top-6 left-6"></i>
+                                        <div className="relative z-10 pl-8">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center">
+                                                    <div className="w-12 h-12 rounded-full bg-slate-200 overflow-hidden mr-4">
+                                                        <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=150&q=80" alt="藥師頭像" className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-slate-800">駐站藥師 / 保養專家</div>
+                                                        <div className="text-xs text-sakura-500 font-medium">成分研究團隊</div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-2xl font-bold text-slate-800">{(parseFloat(product.rating || 0) * 2).toFixed(1)}<span className="text-sm text-slate-400 font-normal">/10</span></div>
+                                                </div>
+                                            </div>
+                                            <p className="text-slate-600 leading-relaxed italic mb-4 whitespace-pre-wrap">
+                                                {product.pharmacistQuote || "這款產品的成分配置合理，符合其宣稱的功效訴求。建議可以依照個人膚況與耐受度調整使用頻率。"}
+                                            </p>
+                                            
+                                            <div className="space-y-3 mt-6 border-t border-slate-100 pt-6">
+                                                <div>
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="font-medium text-slate-700">保濕 / 潤澤力</span>
+                                                        <span className="text-slate-500">{product.scoreMoisture || 8}/10</span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-100 rounded-full h-2">
+                                                        <div className="bg-blue-400 h-2 rounded-full transition-all duration-1000" style={{width: `${(product.scoreMoisture||8)*10}%`}}></div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="font-medium text-slate-700">溫和度 / 修護力</span>
+                                                        <span className="text-slate-500">{product.scoreGentle || 8}/10</span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-100 rounded-full h-2">
+                                                        <div className="bg-green-400 h-2 rounded-full transition-all duration-1000" style={{width: `${(product.scoreGentle||8)*10}%`}}></div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="font-medium text-slate-700">清爽度 / 好吸收</span>
+                                                        <span className="text-slate-500">{product.scoreRefresh || 8}/10</span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-100 rounded-full h-2">
+                                                        <div className="bg-yellow-400 h-2 rounded-full transition-all duration-1000" style={{width: `${(product.scoreRefresh||8)*10}%`}}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+
+                            {/* 右側側邊欄 */}
+                            <div className="w-full lg:w-1/3 space-y-6">
+                                {/* 購物資訊卡片 */}
+                                <div id="shopping" className="bg-white rounded-2xl border border-sakura-200 shadow-lg overflow-hidden content-section sticky top-40">
+                                    <div className="bg-sakura-500 text-white p-4 font-bold flex items-center justify-between">
+                                        <span><i className="fa-solid fa-yen-sign mr-2"></i>日本購買參考資訊</span>
+                                        <span className="text-xs bg-white text-sakura-500 px-2 py-1 rounded">更新</span>
+                                    </div>
+                                    <div className="p-6">
+                                        <div className="mb-4">
+                                            <p className="text-sm text-slate-500 mb-1">藥妝店未稅參考價</p>
+                                            <div className="flex items-end">
+                                                <span className="text-3xl font-bold text-slate-900">¥{product.priceYen || '---'}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-400 mt-1">折合台幣約 ${product.priceTwd || '---'} (依匯率浮動)</p>
+                                        </div>
+                                        
+                                        {product.shoppingNotes && (
+                                            <div className="border-t border-slate-100 pt-4 mb-4">
+                                                <p className="text-sm text-slate-600 whitespace-pre-wrap">{product.shoppingNotes}</p>
+                                            </div>
+                                        )}
+
+                                        <a href="#" onClick={(e)=>e.preventDefault()} className="mt-4 block w-full text-center border border-sakura-500 text-sakura-500 hover:bg-sakura-50 font-medium py-2.5 rounded-full transition-colors">
+                                            查看近期免稅優惠券
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             );
         };
 
-        // --- 視圖：通用列表管理元件 (用於品牌、類型、成分) ---
+        // --- 視圖：通用列表管理元件 ---
         const GenericDataManager = ({ title, collectionName, items }) => {
             const [inputValue, setInputValue] = useState('');
             const handleAdd = async (e) => {
@@ -270,37 +476,36 @@
                 <div className="bg-white rounded-2xl p-8 shadow-md border border-slate-200">
                     <h2 className="text-2xl font-black text-slate-800 mb-6">{title}管理庫</h2>
                     <form onSubmit={handleAdd} className="flex gap-3 mb-8">
-                        <input 
-                            placeholder={`輸入新${title}名稱...`} 
-                            value={inputValue} 
-                            onChange={e => setInputValue(e.target.value)}
-                            className="flex-grow border-2 border-slate-100 p-3 rounded-xl focus:border-sakura-500 outline-none transition font-bold"
-                        />
+                        <input placeholder={`輸入新${title}名稱...`} value={inputValue} onChange={e => setInputValue(e.target.value)} className="flex-grow border-2 border-slate-100 p-3 rounded-xl focus:border-sakura-500 outline-none transition font-bold" />
                         <button type="submit" className="bg-sakura-500 text-white px-6 py-2.5 rounded-xl font-black shadow-lg hover:bg-sakura-600 transition">快速建立</button>
                     </form>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {items.map(item => (
                             <div key={item.id} className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex justify-between items-center group hover:border-sakura-200 transition">
                                 <span className="font-bold text-slate-700">{item.name}</span>
-                                <button onClick={() => handleDelete(item.id)} className="text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <i className="fa-solid fa-trash-can"></i>
-                                </button>
+                                <button onClick={() => handleDelete(item.id)} className="text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><i className="fa-solid fa-trash-can"></i></button>
                             </div>
                         ))}
-                        {items.length === 0 && <div className="col-span-full text-center py-10 text-slate-400 italic">目前尚無資料</div>}
                     </div>
                 </div>
             );
         };
 
-        // --- 視圖：後台管理介面 (專業儀表板版) ---
+        // --- 視圖：後台管理介面 (擴充版) ---
         const AdminDashboard = ({ products, brands, categories, ingredients, setView }) => {
             const [activeTab, setActiveTab] = useState('products');
             const [formData, setFormData] = useState(null);
             
-            const handleSignOut = useCallback(() => {
-                signOut(getAuth()).then(() => window.location.reload());
-            }, []);
+            const handleSignOut = useCallback(() => { signOut(getAuth()).then(() => window.location.reload()); }, []);
+
+            const defaultForm = {
+                brand: "", name: "", classification: "保養品", image: "", description: "",
+                tags: "", coreFeatures: "", ingredientsText: "", 
+                dosageSteps: "", suitableFor: "", notSuitableFor: "",
+                rating: "4.8", reviewCount: "100", pharmacistQuote: "",
+                scoreMoisture: 8, scoreGentle: 8, scoreRefresh: 8,
+                priceYen: "", priceTwd: "", shoppingNotes: ""
+            };
 
             const handleSave = async (e) => {
                 e.preventDefault();
@@ -317,59 +522,41 @@
             };
 
             const handleDelete = async (id) => {
-                if(confirm("確定要永久刪除這筆藥品資料嗎？")) {
-                    await deleteDoc(doc(window.db, 'artifacts', APP_ID, 'public', 'data', 'products', id));
-                }
+                if(confirm("確定要永久刪除這筆資料嗎？")) await deleteDoc(doc(window.db, 'artifacts', APP_ID, 'public', 'data', 'products', id));
             };
 
             return (
                 <div className="min-h-screen bg-slate-100 flex animate-in fade-in duration-300">
                     {/* 專業側邊欄 */}
-                    <aside className="w-64 bg-slate-900 text-slate-400 flex flex-col sticky top-0 h-screen shadow-2xl">
+                    <aside className="w-64 bg-slate-900 text-slate-400 flex flex-col sticky top-0 h-screen shadow-2xl flex-shrink-0">
                         <div className="p-6 mb-4">
-                            <div className="font-black text-sakura-500 text-xl flex items-center gap-2">
-                                <i className="fa-solid fa-user-shield"></i> 日藥後台系統
-                            </div>
+                            <div className="font-black text-sakura-500 text-xl flex items-center gap-2"><i className="fa-solid fa-user-shield"></i> 日藥後台系統</div>
                             <div className="text-[10px] uppercase tracking-widest mt-1 opacity-50 font-bold">Admin Management</div>
                         </div>
-                        
                         <nav className="flex-grow px-4 space-y-2">
-                            <button onClick={() => { setActiveTab('products'); setFormData(null); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${activeTab === 'products' ? 'admin-sidebar-active' : 'hover:bg-slate-800 hover:text-white'}`}>
-                                <i className="fa-solid fa-pills w-5"></i> 藥品資料庫
-                            </button>
+                            <button onClick={() => { setActiveTab('products'); setFormData(null); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${activeTab === 'products' ? 'admin-sidebar-active' : 'hover:bg-slate-800 hover:text-white'}`}><i className="fa-solid fa-pills w-5"></i> 產品資料庫</button>
                             <div className="pt-4 pb-2 px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">基礎資料維護</div>
-                            <button onClick={() => setActiveTab('brands')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${activeTab === 'brands' ? 'admin-sidebar-active' : 'hover:bg-slate-800 hover:text-white'}`}>
-                                <i className="fa-solid fa-building w-5"></i> 藥廠品牌
-                            </button>
-                            <button onClick={() => setActiveTab('categories')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${activeTab === 'categories' ? 'admin-sidebar-active' : 'hover:bg-slate-800 hover:text-white'}`}>
-                                <i className="fa-solid fa-tags w-5"></i> 產品類型
-                            </button>
-                            <button onClick={() => setActiveTab('ingredients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${activeTab === 'ingredients' ? 'admin-sidebar-active' : 'hover:bg-slate-800 hover:text-white'}`}>
-                                <i className="fa-solid fa-vial w-5"></i> 成分清單庫
-                            </button>
+                            <button onClick={() => setActiveTab('brands')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${activeTab === 'brands' ? 'admin-sidebar-active' : 'hover:bg-slate-800 hover:text-white'}`}><i className="fa-solid fa-building w-5"></i> 品牌管理</button>
+                            <button onClick={() => setActiveTab('categories')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${activeTab === 'categories' ? 'admin-sidebar-active' : 'hover:bg-slate-800 hover:text-white'}`}><i className="fa-solid fa-tags w-5"></i> 類型管理</button>
+                            <button onClick={() => setActiveTab('ingredients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${activeTab === 'ingredients' ? 'admin-sidebar-active' : 'hover:bg-slate-800 hover:text-white'}`}><i className="fa-solid fa-vial w-5"></i> 常用成分庫</button>
                         </nav>
-
                         <div className="p-4 border-t border-slate-800">
-                            <button onClick={() => setView('home')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition mb-2">
-                                <i className="fa-solid fa-eye"></i> 前台預覽
-                            </button>
-                            <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition">
-                                <i className="fa-solid fa-right-from-bracket"></i> 登出系統
-                            </button>
+                            <button onClick={() => setView('home')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition mb-2"><i className="fa-solid fa-eye"></i> 前台預覽</button>
+                            <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-400 hover:bg-red-500/10 transition"><i className="fa-solid fa-right-from-bracket"></i> 登出系統</button>
                         </div>
                     </aside>
 
                     {/* 主內容區 */}
-                    <main className="flex-grow p-10 overflow-y-auto h-screen no-scrollbar">
+                    <main className="flex-grow p-10 overflow-y-auto h-screen">
                         {activeTab === 'products' && (
                             !formData ? (
                                 <div className="bg-white rounded-2xl p-8 shadow-md border border-slate-200">
                                     <div className="flex justify-between items-center mb-8">
                                         <div>
-                                            <h2 className="text-2xl font-black text-slate-800">藥品目錄清單</h2>
-                                            <p className="text-slate-400 text-sm font-medium">管理所有在前台展示的藥妝產品資訊</p>
+                                            <h2 className="text-2xl font-black text-slate-800">產品目錄清單</h2>
+                                            <p className="text-slate-400 text-sm font-medium">管理所有在前台展示的產品與成分資訊</p>
                                         </div>
-                                        <button onClick={() => setFormData({brand:"",name:"",category:"常備藥",classification:"第2類醫藥品",image:"",price:"",tags:"",description:"",alert:"",ingredientsText:"",dosage:"",warnings:"",pharmacist:""})} className="bg-sakura-500 text-white px-6 py-2.5 rounded-xl font-black shadow-lg hover:bg-sakura-600 transition">+ 新增藥品</button>
+                                        <button onClick={() => setFormData({...defaultForm})} className="bg-sakura-500 text-white px-6 py-2.5 rounded-xl font-black shadow-lg hover:bg-sakura-600 transition">+ 新增產品</button>
                                     </div>
                                     <div className="divide-y divide-slate-100">
                                         {products.map(p => (
@@ -392,73 +579,132 @@
                                     </div>
                                 </div>
                             ) : (
-                                <form onSubmit={handleSave} className="bg-white rounded-2xl p-8 shadow-xl border border-slate-200 space-y-6">
-                                    <div className="flex justify-between items-center border-b pb-4 mb-2">
-                                        <h2 className="text-2xl font-black text-slate-800">{formData.id ? '🛠️ 編輯藥品' : '✨ 新增藥品'}</h2>
-                                        <button type="button" onClick={() => setFormData(null)} className="text-slate-400 hover:text-slate-800 transition"><i className="fa-solid fa-xmark text-2xl"></i></button>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-tighter">藥廠品牌 (從資料庫選擇)</label>
-                                            <select required value={formData.brand} onChange={e=>setFormData({...formData,brand:e.target.value})} className="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-sakura-500 outline-none transition font-bold bg-slate-50">
-                                                <option value="">請選擇品牌...</option>
-                                                {brands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
-                                                {!brands.some(b => b.name === formData.brand) && formData.brand && <option value={formData.brand}>{formData.brand} (自訂)</option>}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-tighter">產品類型</label>
-                                            <select required value={formData.classification} onChange={e=>setFormData({...formData,classification:e.target.value})} className="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-sakura-500 outline-none transition font-bold bg-slate-50">
-                                                <option value="">請選擇分級...</option>
-                                                <option value="第 1 類醫藥品">第 1 類醫藥品</option>
-                                                <option value="指定第 2 類醫藥品">指定第 2 類醫藥品</option>
-                                                <option value="第 2 類醫藥品">第 2 類醫藥品</option>
-                                                <option value="第 3 類醫藥品">第 3 類醫藥品</option>
-                                                <option value="醫藥部外品">醫藥部外品</option>
-                                            </select>
+                                <form onSubmit={handleSave} className="bg-white rounded-2xl p-8 shadow-xl border border-slate-200 space-y-8 max-w-5xl mx-auto">
+                                    <div className="flex justify-between items-center border-b pb-4 sticky top-0 bg-white z-10">
+                                        <h2 className="text-2xl font-black text-slate-800">{formData.id ? '🛠️ 編輯產品' : '✨ 新增產品 (油性敏感肌保養品適用)'}</h2>
+                                        <div className="flex gap-4">
+                                            <button type="button" onClick={()=>setFormData(null)} className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-50 rounded-lg">取消</button>
+                                            <button type="submit" className="px-6 py-2 bg-sakura-500 text-white rounded-xl font-black shadow-md hover:bg-sakura-600 transition">儲存資料</button>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-tighter">藥品名稱</label>
-                                            <input placeholder="輸入名稱..." value={formData.name} onChange={e=>setFormData({...formData,name:e.target.value})} className="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-sakura-500 outline-none transition font-bold" required />
+
+                                    {/* 基礎資訊 */}
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
+                                        <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-solid fa-box mr-2 text-sakura-500"></i> 基礎與外觀資訊</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">品牌 (例: Anua, Torriden, Dr.G)</label>
+                                                <input value={formData.brand} onChange={e=>setFormData({...formData,brand:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" required />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">產品名稱 (例: 魚腥草77%鎮靜化妝水)</label>
+                                                <input value={formData.name} onChange={e=>setFormData({...formData,name:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" required />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">類型分類</label>
+                                                <input value={formData.classification} onChange={e=>setFormData({...formData,classification:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" placeholder="例如: 化妝水、乳霜、醫藥品" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">圖片網址 URL</label>
+                                                <input value={formData.image} onChange={e=>setFormData({...formData,image:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" placeholder="https://" />
+                                            </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-tighter">圖片連結 (URL)</label>
-                                            <input placeholder="https://..." value={formData.image} onChange={e=>setFormData({...formData,image:e.target.value})} className="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-sakura-500 outline-none transition font-bold" />
+                                            <label className="block text-xs font-black text-slate-500 mb-1">產品短描述</label>
+                                            <textarea value={formData.description} onChange={e=>setFormData({...formData,description:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="2" placeholder="簡短介紹該產品的特色，例如：專為痘痘肌、敏感肌設計的舒緩化妝水..."></textarea>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-tighter">成分科學解析 (格式：名稱|劑量|說明)</label>
-                                        <div className="mb-2 flex flex-wrap gap-2">
-                                            {ingredients.slice(0, 8).map(i => (
-                                                <button key={i.id} type="button" onClick={() => setFormData({...formData, ingredientsText: (formData.ingredientsText ? formData.ingredientsText + '\n' : '') + i.name + '|含量|機轉說明'})} className="text-[10px] bg-slate-100 hover:bg-sakura-100 px-2 py-1 rounded-md font-bold text-slate-500 transition">+ {i.name}</button>
-                                            ))}
-                                            <span className="text-[10px] text-slate-300 self-center">點擊上方成分可快速填入</span>
+
+                                    {/* 產品亮點與標籤 */}
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
+                                        <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-solid fa-tags mr-2 text-sakura-500"></i> 特色與成分重點</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">標籤 (逗號分隔，例: 無香料,敏感肌適用,舒緩泛紅)</label>
+                                                <input value={formData.tags} onChange={e=>setFormData({...formData,tags:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">核心作用亮點 (每行一點)</label>
+                                                <textarea value={formData.coreFeatures} onChange={e=>setFormData({...formData,coreFeatures:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="3" placeholder="魚腥草萃取：高達77%鎮靜舒緩泛紅&#10;積雪草：修護受損肌膚屏障"></textarea>
+                                            </div>
                                         </div>
-                                        <textarea placeholder="例如：布洛芬|150mg|止痛效果" value={formData.ingredientsText} onChange={e=>setFormData({...formData,ingredientsText:e.target.value})} className="w-full border-2 border-slate-50 p-3 rounded-xl font-mono text-xs focus:border-sakura-500 outline-none transition bg-slate-50" rows="5"></textarea>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-tighter">用法用量建議</label>
-                                            <textarea value={formData.dosage} onChange={e=>setFormData({...formData,dosage:e.target.value})} className="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-sakura-500 outline-none transition font-bold" rows="3"></textarea>
+                                            <label className="block text-xs font-black text-slate-500 mb-1">全成分解析表 (格式：名稱|說明|安全度。每行一個)</label>
+                                            <textarea value={formData.ingredientsText} onChange={e=>setFormData({...formData,ingredientsText:e.target.value})} className="w-full p-2.5 rounded-lg border font-mono text-sm focus:border-sakura-500 outline-none" rows="4" placeholder="魚腥草萃取|極佳的抗發炎與舒緩效果|高 / 安全&#10;玻尿酸|強效保濕鎖水|高 / 安全"></textarea>
+                                        </div>
+                                    </div>
+
+                                    {/* 使用方式與對象 */}
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
+                                        <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-regular fa-face-smile mr-2 text-sakura-500"></i> 受眾與用法指導</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">最適合對象 (每行一點)</label>
+                                                <textarea value={formData.suitableFor} onChange={e=>setFormData({...formData,suitableFor:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="3" placeholder="油性敏感肌&#10;正在使用樂淨/蒂膚麗需要溫和打底者"></textarea>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">較不適合對象 (每行一點)</label>
+                                                <textarea value={formData.notSuitableFor} onChange={e=>setFormData({...formData,notSuitableFor:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="3" placeholder="極乾性肌膚 (可能保濕度不夠)"></textarea>
+                                            </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-tighter">禁忌對象 (每行一個)</label>
-                                            <textarea value={formData.warnings} onChange={e=>setFormData({...formData,warnings:e.target.value})} className="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-sakura-500 outline-none transition font-bold" rows="3"></textarea>
+                                            <label className="block text-xs font-black text-slate-500 mb-1">使用步驟建議 (格式：標題|內容說明。每行一步)</label>
+                                            <textarea value={formData.dosageSteps} onChange={e=>setFormData({...formData,dosageSteps:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="3" placeholder="洗臉後打底|取適量於掌心輕拍全臉，避免摩擦&#10;搭配藥物|等待吸收後，針對痘痘處薄塗樂淨"></textarea>
                                         </div>
                                     </div>
-                                    <div className="flex justify-end gap-4 pt-6 border-t border-slate-50">
-                                        <button type="button" onClick={()=>setFormData(null)} className="px-6 py-2.5 border-2 border-slate-100 rounded-xl font-black text-slate-500">取消</button>
-                                        <button type="submit" className="px-10 py-2.5 bg-sakura-500 text-white rounded-xl font-black shadow-xl hover:bg-sakura-600 transition">確定儲存</button>
+
+                                    {/* 評價與評分 */}
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
+                                        <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-solid fa-star mr-2 text-sakura-500"></i> 專家評價與雷達評分</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">星級 (例: 4.8)</label>
+                                                <input value={formData.rating} onChange={e=>setFormData({...formData,rating:e.target.value})} className="w-full p-2.5 rounded-lg border outline-none" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">保濕力 (1-10)</label>
+                                                <input type="number" min="1" max="10" value={formData.scoreMoisture} onChange={e=>setFormData({...formData,scoreMoisture:e.target.value})} className="w-full p-2.5 rounded-lg border outline-none" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">溫和度 (1-10)</label>
+                                                <input type="number" min="1" max="10" value={formData.scoreGentle} onChange={e=>setFormData({...formData,scoreGentle:e.target.value})} className="w-full p-2.5 rounded-lg border outline-none" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">清爽度 (1-10)</label>
+                                                <input type="number" min="1" max="10" value={formData.scoreRefresh} onChange={e=>setFormData({...formData,scoreRefresh:e.target.value})} className="w-full p-2.5 rounded-lg border outline-none" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-black text-slate-500 mb-1">專家總結評語</label>
+                                            <textarea value={formData.pharmacistQuote} onChange={e=>setFormData({...formData,pharmacistQuote:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="2" placeholder="「這款非常適合油豆肌，成分單純不會干擾後續藥膏吸收...」"></textarea>
+                                        </div>
                                     </div>
+
+                                    {/* 購物資訊 */}
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
+                                        <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-solid fa-cart-shopping mr-2 text-sakura-500"></i> 購買參考資訊</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">日幣售價 (僅數字)</label>
+                                                <input value={formData.priceYen} onChange={e=>setFormData({...formData,priceYen:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" placeholder="1900" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">台幣售價 (僅數字)</label>
+                                                <input value={formData.priceTwd} onChange={e=>setFormData({...formData,priceTwd:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" placeholder="400" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-black text-slate-500 mb-1">購買通路與建議 (例如 Olive Young, 屈臣氏)</label>
+                                            <textarea value={formData.shoppingNotes} onChange={e=>setFormData({...formData,shoppingNotes:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="2" placeholder="韓國 Olive Young 常有買一送一優惠..."></textarea>
+                                        </div>
+                                    </div>
+
                                 </form>
                             )
                         )}
-
-                        {activeTab === 'brands' && <GenericDataManager title="藥廠品牌" collectionName="brands" items={brands} />}
-                        {activeTab === 'categories' && <GenericDataManager title="產品類型" collectionName="categories" items={categories} />}
-                        {activeTab === 'ingredients' && <GenericDataManager title="成分清單" collectionName="ingredients" items={ingredients} />}
+                        {activeTab === 'brands' && <GenericDataManager title="品牌管理" collectionName="brands" items={brands} />}
+                        {activeTab === 'categories' && <GenericDataManager title="類型管理" collectionName="categories" items={categories} />}
+                        {activeTab === 'ingredients' && <GenericDataManager title="成分資料庫" collectionName="ingredients" items={ingredients} />}
                     </main>
                 </div>
             );
@@ -503,8 +749,7 @@
                             setView('admin');
                         } else {
                             setIsAuthenticated(false);
-                            const maskedEmail = u.email.substring(0, 3) + "****";
-                            setAuthError(`身分驗證失敗：帳號 ${maskedEmail} 沒有管理員權限。\n\n雜湊值：${emailHash}`);
+                            setAuthError(`身分驗證失敗：帳號 ${u.email.substring(0,3)}**** 沒有管理員權限。`);
                             await signOut(auth);
                         }
                     } else {
@@ -514,7 +759,6 @@
                 });
             }, []);
 
-            // 監聽所有資料集
             useEffect(() => {
                 if (!dbReady) return;
                 const path = (name) => collection(window.db, 'artifacts', APP_ID, 'public', 'data', name);
@@ -537,22 +781,24 @@
             return (
                 <div className="min-h-screen flex flex-col">
                     {view !== 'admin' && view !== 'adminLogin' && (
-                        <nav className="fixed w-full z-50 top-0 bg-white/90 backdrop-blur shadow-md">
+                        <nav className="fixed w-full z-50 top-0 bg-white/90 backdrop-blur shadow-md transition-all">
                             <div className="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
                                 <div onClick={() => setView('home')} className="cursor-pointer flex items-center group">
                                     <i className="fa-solid fa-leaf text-sakura-500 text-2xl mr-2 group-hover:rotate-12 transition-transform duration-300"></i>
                                     <span className="font-black text-2xl text-slate-800">日藥<span className="text-sakura-500">指南</span></span>
                                 </div>
-                                <button onClick={() => setView(isAuthenticated ? 'admin' : 'adminLogin')} className={`${isAuthenticated ? 'bg-sakura-500' : 'bg-slate-800'} text-white px-6 py-2.5 rounded-full text-sm font-black shadow-lg hover:scale-105 transition`}>
-                                    <i className={`fa-solid ${isAuthenticated ? 'fa-user-shield' : 'fa-gear'} mr-2`}></i> 
-                                    {isAuthenticated ? '進入後台' : '管理員入口'}
-                                </button>
+                                <div className="flex gap-4">
+                                    <button onClick={() => setView(isAuthenticated ? 'admin' : 'adminLogin')} className={`${isAuthenticated ? 'bg-sakura-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} px-5 py-2 rounded-full text-sm font-bold transition flex items-center`}>
+                                        <i className={`fa-solid ${isAuthenticated ? 'fa-user-shield' : 'fa-gear'} mr-2`}></i> 
+                                        {isAuthenticated ? '進入後台' : '管理員'}
+                                    </button>
+                                </div>
                             </div>
                         </nav>
                     )}
                     <div className="flex-grow">{renderContent()}</div>
                     <footer className="bg-slate-900 text-slate-500 py-12 text-center text-xs">
-                        <p className="font-bold">© 2026 日藥指南專業版 Wa-Cosme Guide</p>
+                        <p className="font-bold">© 2026 日藥指南 Wa-Cosme Guide</p>
                     </footer>
                 </div>
             );
