@@ -149,13 +149,13 @@
             </div>
         );
 
-        // --- 視圖：前台詳細頁 (復刻自 test.html) ---
+        // --- 視圖：前台詳細頁 ---
         const ProductDetailView = ({ product, setView }) => {
-            const [activeTab, setActiveTab] = useState('analysis');
+            const [activeTab, setActiveTab] = useState('dosage');
 
             useEffect(() => {
                 const handleScroll = () => {
-                    const sections = ['analysis', 'usage', 'review', 'shopping'];
+                    const sections = ['dosage', 'analysis', 'usage'];
                     let current = sections[0];
                     for (const id of sections) {
                         const element = document.getElementById(id);
@@ -175,10 +175,17 @@
             const parseList = (text) => text ? text.split('\n').filter(t => t.trim()) : [];
             const tags = product.tags ? product.tags.split(',').filter(t => t.trim()) : [];
             const coreFeatures = parseList(product.coreFeatures);
-            const ingredients = parseList(product.ingredientsText).map(line => {
-                const parts = line.split('|');
-                return { name: parts[0] || '', desc: parts[1] || '', safety: parts[2] || '高 / 安全' };
-            });
+            
+            let displayIngredients = [];
+            if (product.ingredientsList && Array.isArray(product.ingredientsList)) {
+                displayIngredients = product.ingredientsList;
+            } else if (product.ingredientsText) {
+                displayIngredients = parseList(product.ingredientsText).map(line => {
+                    const parts = line.split('|');
+                    return { type: 'core', name: parts[0] || '', desc: parts[1] || '', safety: parts[2] || '高 / 安全', amount: '' };
+                });
+            }
+
             const suitableFor = parseList(product.suitableFor);
             const notSuitableFor = parseList(product.notSuitableFor);
             const dosageSteps = parseList(product.dosageSteps).map(line => {
@@ -227,17 +234,11 @@
                             {/* 產品資訊 (右側) */}
                             <div className="w-full md:w-3/5 flex flex-col justify-center">
                                 <div className="text-sm font-bold text-sakura-500 mb-2 tracking-wider">{product.brand}</div>
-                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 leading-tight">
-                                    {product.name}
+                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 leading-tight flex flex-col gap-2">
+                                    <span>{product.name}</span>
+                                    {product.jpName && <span className="text-lg md:text-xl text-slate-500 font-medium">{product.jpName}</span>}
                                 </h1>
                                 
-                                <div className="flex flex-wrap items-center gap-4 mb-6">
-                                    <div className="flex items-center text-yellow-400">
-                                        <i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star"></i><i className="fa-solid fa-star-half-stroke"></i>
-                                        <span className="text-slate-600 font-medium ml-2 text-sm">{product.rating || '4.8'} ({product.reviewCount || '128'}則專家與用戶評價)</span>
-                                    </div>
-                                </div>
-
                                 <div className="flex flex-wrap gap-2 mb-6">
                                     {tags.map((tag, i) => (
                                         <span key={i} className="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded-full text-xs font-medium">{tag.trim()}</span>
@@ -272,81 +273,93 @@
                     <div className="sticky top-20 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm mb-8 transition-all">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="flex overflow-x-auto no-scrollbar space-x-8">
-                                <a href="#analysis" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='analysis' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>成分全解析</a>
+                                <a href="#dosage" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='dosage' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>用法用量</a>
+                                <a href="#analysis" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='analysis' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>成分解析</a>
                                 <a href="#usage" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='usage' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>使用方式與建議</a>
-                                <a href="#review" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='review' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>專家綜合評價</a>
-                                <a href="#shopping" className={`py-4 whitespace-nowrap border-b-2 transition-colors ${activeTab==='shopping' ? 'text-sakura-500 font-bold border-sakura-500' : 'text-slate-500 font-medium border-transparent hover:text-sakura-500 hover:border-sakura-300'}`}>購買資訊</a>
                             </div>
                         </div>
                     </div>
 
-                    {/* 內容主體區塊 */}
+                    {/* 內容主體區塊 - 全寬配置 */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex flex-col lg:flex-row gap-10">
+                        <div className="w-full space-y-16">
                             
-                            {/* 左側主內容 */}
-                            <div className="w-full lg:w-2/3 space-y-16">
-                                
-                                {/* 成分解析 */}
-                                <section id="analysis" className="content-section">
+                            {/* 用法用量 */}
+                            {product.dosageInstruction && (
+                                <section id="dosage" className="content-section">
                                     <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
-                                        <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 全成分科學解析
+                                        <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 用法用量
                                     </h2>
-                                    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                                        <table className="w-full text-left text-sm">
-                                            <thead className="bg-slate-50 text-slate-700">
-                                                <tr>
-                                                    <th className="px-6 py-4 font-bold border-b border-slate-200">成分名稱</th>
-                                                    <th className="px-6 py-4 font-bold border-b border-slate-200">主要功效與機轉</th>
-                                                    <th className="px-6 py-4 font-bold border-b border-slate-200 w-24">標籤/安心度</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {ingredients.map((ing, i) => (
-                                                    <tr key={i} className="hover:bg-slate-50/50">
-                                                        <td className="px-6 py-4">
-                                                            <div className="font-bold text-slate-800">{ing.name}</div>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-slate-600">{ing.desc}</td>
-                                                        <td className="px-6 py-4">
-                                                            <span className={`px-2 py-1 rounded text-xs font-bold ${ing.safety.includes('注意')||ing.safety.includes('中') ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{ing.safety}</span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {ingredients.length === 0 && <tr><td colSpan="3" className="px-6 py-8 text-center text-slate-400">尚無成分資料</td></tr>}
-                                            </tbody>
-                                        </table>
+                                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                        <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{product.dosageInstruction}</p>
                                     </div>
                                 </section>
+                            )}
 
-                                {/* 使用方式與建議 */}
-                                <section id="usage" className="content-section">
-                                    <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
-                                        <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 使用方式與受眾建議
-                                    </h2>
-                                    
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                        <div className="bg-sakura-50 rounded-2xl p-6 border border-sakura-100">
-                                            <h3 className="font-bold text-sakura-600 text-lg mb-3 flex items-center"><i className="fa-regular fa-face-smile mr-2"></i> 最適合這些人</h3>
-                                            <ul className="space-y-2 text-slate-700">
-                                                {suitableFor.map((item, i) => <li key={i}><i className="fa-solid fa-check text-sakura-500 mr-2"></i> {item}</li>)}
-                                                {suitableFor.length===0 && <li className="text-slate-400 italic">無特定建議</li>}
-                                            </ul>
-                                        </div>
-                                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-                                            <h3 className="font-bold text-slate-600 text-lg mb-3 flex items-center"><i className="fa-regular fa-face-frown mr-2"></i> 較不適合/需注意</h3>
-                                            <ul className="space-y-2 text-slate-700">
-                                                {notSuitableFor.map((item, i) => <li key={i}><i className="fa-solid fa-xmark text-slate-400 mr-2"></i> {item}</li>)}
-                                                {notSuitableFor.length===0 && <li className="text-slate-400 italic">無特定禁忌</li>}
-                                            </ul>
-                                        </div>
+                            {/* 成分解析 */}
+                            <section id="analysis" className="content-section">
+                                <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                                    <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 成分解析
+                                </h2>
+                                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-slate-50 text-slate-700">
+                                            <tr>
+                                                <th className="px-6 py-4 font-bold border-b border-slate-200 w-1/4">成分名稱</th>
+                                                <th className="px-6 py-4 font-bold border-b border-slate-200 w-32">含量</th>
+                                                <th className="px-6 py-4 font-bold border-b border-slate-200">主要功效與機轉</th>
+                                                <th className="px-6 py-4 font-bold border-b border-slate-200 w-32">標籤/安心度</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {displayIngredients.map((ing, i) => (
+                                                <tr key={i} className="hover:bg-slate-50/50">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-slate-800">{ing.name}</div>
+                                                        {ing.type === 'additive' && <div className="text-[10px] text-slate-400 mt-1">添加物</div>}
+                                                    </td>
+                                                    <td className="px-6 py-4 font-medium text-sakura-500">{ing.amount || '-'}</td>
+                                                    <td className="px-6 py-4 text-slate-600">{ing.desc}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${(ing.safety||'').includes('注意')||(ing.safety||'').includes('中') ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{ing.safety || '高 / 安全'}</span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {displayIngredients.length === 0 && <tr><td colSpan="4" className="px-6 py-8 text-center text-slate-400">尚無成分資料</td></tr>}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            {/* 使用方式與建議 */}
+                            <section id="usage" className="content-section">
+                                <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                                    <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 使用方式與受眾建議
+                                </h2>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                    <div className="bg-sakura-50 rounded-2xl p-6 border border-sakura-100">
+                                        <h3 className="font-bold text-sakura-600 text-lg mb-3 flex items-center"><i className="fa-regular fa-face-smile mr-2"></i> 最適合這些人</h3>
+                                        <ul className="space-y-2 text-slate-700">
+                                            {suitableFor.map((item, i) => <li key={i}><i className="fa-solid fa-check text-sakura-500 mr-2"></i> {item}</li>)}
+                                            {suitableFor.length===0 && <li className="text-slate-400 italic">無特定建議</li>}
+                                        </ul>
                                     </div>
+                                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                                        <h3 className="font-bold text-slate-600 text-lg mb-3 flex items-center"><i className="fa-regular fa-face-frown mr-2"></i> 較不適合/需注意</h3>
+                                        <ul className="space-y-2 text-slate-700">
+                                            {notSuitableFor.map((item, i) => <li key={i}><i className="fa-solid fa-xmark text-slate-400 mr-2"></i> {item}</li>)}
+                                            {notSuitableFor.length===0 && <li className="text-slate-400 italic">無特定禁忌</li>}
+                                        </ul>
+                                    </div>
+                                </div>
 
-                                    {dosageSteps.length > 0 && (
-                                        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                                            <h3 className="font-bold text-slate-800 mb-4 text-lg">💡 建議用法步驟</h3>
+                                {dosageSteps.length > 0 && (
+                                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                        <h3 className="font-bold text-slate-800 mb-4 text-lg">💡 建議用法步驟</h3>
+                                        <div className="grid grid-cols-1 gap-4">
                                             {dosageSteps.map((step, i) => (
-                                                <div key={i} className={`flex ${i !== dosageSteps.length-1 ? 'mb-4' : ''}`}>
+                                                <div key={i} className="flex">
                                                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-sakura-100 text-sakura-500 flex items-center justify-center font-bold mr-4">{i+1}</div>
                                                     <div>
                                                         <p className="text-slate-700 font-medium">{step.title}</p>
@@ -355,99 +368,9 @@
                                                 </div>
                                             ))}
                                         </div>
-                                    )}
-                                </section>
-
-                                {/* 專家評論 */}
-                                <section id="review" className="content-section">
-                                    <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
-                                        <span className="w-1.5 h-6 bg-sakura-500 rounded-full mr-3"></span> 專家綜合評價
-                                    </h2>
-                                    
-                                    <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200 shadow-sm relative">
-                                        <i className="fa-solid fa-quote-left text-4xl text-sakura-100 absolute top-6 left-6"></i>
-                                        <div className="relative z-10 pl-8">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div className="flex items-center">
-                                                    <div className="w-12 h-12 rounded-full bg-slate-200 overflow-hidden mr-4">
-                                                        <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=150&q=80" alt="藥師頭像" className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-slate-800">駐站藥師 / 保養專家</div>
-                                                        <div className="text-xs text-sakura-500 font-medium">成分研究團隊</div>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-2xl font-bold text-slate-800">{(parseFloat(product.rating || 0) * 2).toFixed(1)}<span className="text-sm text-slate-400 font-normal">/10</span></div>
-                                                </div>
-                                            </div>
-                                            <p className="text-slate-600 leading-relaxed italic mb-4 whitespace-pre-wrap">
-                                                {product.pharmacistQuote || "這款產品的成分配置合理，符合其宣稱的功效訴求。建議可以依照個人膚況與耐受度調整使用頻率。"}
-                                            </p>
-                                            
-                                            <div className="space-y-3 mt-6 border-t border-slate-100 pt-6">
-                                                <div>
-                                                    <div className="flex justify-between text-sm mb-1">
-                                                        <span className="font-medium text-slate-700">保濕 / 潤澤力</span>
-                                                        <span className="text-slate-500">{product.scoreMoisture || 8}/10</span>
-                                                    </div>
-                                                    <div className="w-full bg-slate-100 rounded-full h-2">
-                                                        <div className="bg-blue-400 h-2 rounded-full transition-all duration-1000" style={{width: `${(product.scoreMoisture||8)*10}%`}}></div>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div className="flex justify-between text-sm mb-1">
-                                                        <span className="font-medium text-slate-700">溫和度 / 修護力</span>
-                                                        <span className="text-slate-500">{product.scoreGentle || 8}/10</span>
-                                                    </div>
-                                                    <div className="w-full bg-slate-100 rounded-full h-2">
-                                                        <div className="bg-green-400 h-2 rounded-full transition-all duration-1000" style={{width: `${(product.scoreGentle||8)*10}%`}}></div>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <div className="flex justify-between text-sm mb-1">
-                                                        <span className="font-medium text-slate-700">清爽度 / 好吸收</span>
-                                                        <span className="text-slate-500">{product.scoreRefresh || 8}/10</span>
-                                                    </div>
-                                                    <div className="w-full bg-slate-100 rounded-full h-2">
-                                                        <div className="bg-yellow-400 h-2 rounded-full transition-all duration-1000" style={{width: `${(product.scoreRefresh||8)*10}%`}}></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
-                                </section>
-                            </div>
-
-                            {/* 右側側邊欄 */}
-                            <div className="w-full lg:w-1/3 space-y-6">
-                                {/* 購物資訊卡片 */}
-                                <div id="shopping" className="bg-white rounded-2xl border border-sakura-200 shadow-lg overflow-hidden content-section sticky top-40">
-                                    <div className="bg-sakura-500 text-white p-4 font-bold flex items-center justify-between">
-                                        <span><i className="fa-solid fa-yen-sign mr-2"></i>日本購買參考資訊</span>
-                                        <span className="text-xs bg-white text-sakura-500 px-2 py-1 rounded">更新</span>
-                                    </div>
-                                    <div className="p-6">
-                                        <div className="mb-4">
-                                            <p className="text-sm text-slate-500 mb-1">藥妝店未稅參考價</p>
-                                            <div className="flex items-end">
-                                                <span className="text-3xl font-bold text-slate-900">¥{product.priceYen || '---'}</span>
-                                            </div>
-                                            <p className="text-xs text-slate-400 mt-1">折合台幣約 ${product.priceTwd || '---'} (依匯率浮動)</p>
-                                        </div>
-                                        
-                                        {product.shoppingNotes && (
-                                            <div className="border-t border-slate-100 pt-4 mb-4">
-                                                <p className="text-sm text-slate-600 whitespace-pre-wrap">{product.shoppingNotes}</p>
-                                            </div>
-                                        )}
-
-                                        <a href="#" onClick={(e)=>e.preventDefault()} className="mt-4 block w-full text-center border border-sakura-500 text-sakura-500 hover:bg-sakura-50 font-medium py-2.5 rounded-full transition-colors">
-                                            查看近期免稅優惠券
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+                                )}
+                            </section>
                         </div>
                     </div>
                 </div>
@@ -491,7 +414,7 @@
             );
         };
 
-        // --- 視圖：後台管理介面 (擴充版) ---
+        // --- 視圖：後台管理介面 ---
         const AdminDashboard = ({ products, brands, categories, ingredients, setView }) => {
             const [activeTab, setActiveTab] = useState('products');
             const [formData, setFormData] = useState(null);
@@ -499,12 +422,27 @@
             const handleSignOut = useCallback(() => { signOut(getAuth()).then(() => window.location.reload()); }, []);
 
             const defaultForm = {
-                brand: "", name: "", classification: "保養品", image: "", description: "",
-                tags: "", coreFeatures: "", ingredientsText: "", 
-                dosageSteps: "", suitableFor: "", notSuitableFor: "",
-                rating: "4.8", reviewCount: "100", pharmacistQuote: "",
-                scoreMoisture: 8, scoreGentle: 8, scoreRefresh: 8,
-                priceYen: "", priceTwd: "", shoppingNotes: ""
+                brand: "", name: "", jpName: "", classification: "保養品", image: "", description: "",
+                tags: "", coreFeatures: "", ingredientsList: [], dosageInstruction: "",
+                dosageSteps: "", suitableFor: "", notSuitableFor: ""
+            };
+
+            const updateIngredient = (index, field, value) => {
+                const newList = [...(formData.ingredientsList || [])];
+                newList[index] = { ...newList[index], [field]: value };
+                setFormData({ ...formData, ingredientsList: newList });
+            };
+
+            const addIngredient = (type) => {
+                const newList = [...(formData.ingredientsList || [])];
+                newList.push({ type, name: '', amount: '', desc: '', safety: '高 / 安全' });
+                setFormData({ ...formData, ingredientsList: newList });
+            };
+
+            const removeIngredient = (index) => {
+                const newList = [...(formData.ingredientsList || [])];
+                newList.splice(index, 1);
+                setFormData({ ...formData, ingredientsList: newList });
             };
 
             const handleSave = async (e) => {
@@ -597,8 +535,12 @@
                                                 <input value={formData.brand} onChange={e=>setFormData({...formData,brand:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" required />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-black text-slate-500 mb-1">產品名稱 (例: 魚腥草77%鎮靜化妝水)</label>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">產品名稱 (中文) (例: 魚腥草77%鎮靜化妝水)</label>
                                                 <input value={formData.name} onChange={e=>setFormData({...formData,name:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" required />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black text-slate-500 mb-1">產品名稱 (日文原文 / 原文)</label>
+                                                <input value={formData.jpName || ''} onChange={e=>setFormData({...formData,jpName:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" placeholder="例: ドクダミ77％スージングトナー" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-black text-slate-500 mb-1">類型分類</label>
@@ -615,6 +557,15 @@
                                         </div>
                                     </div>
 
+                                    {/* 用法用量 */}
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
+                                        <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-solid fa-clock mr-2 text-sakura-500"></i> 用法用量</h3>
+                                        <div>
+                                            <label className="block text-xs font-black text-slate-500 mb-1">基礎用法用量說明</label>
+                                            <textarea value={formData.dosageInstruction || ''} onChange={e=>setFormData({...formData,dosageInstruction:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="2" placeholder="洗臉後，取適量於掌心輕拍全臉至完全吸收..."></textarea>
+                                        </div>
+                                    </div>
+
                                     {/* 產品亮點與標籤 */}
                                     <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
                                         <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-solid fa-tags mr-2 text-sakura-500"></i> 特色與成分重點</h3>
@@ -628,9 +579,50 @@
                                                 <textarea value={formData.coreFeatures} onChange={e=>setFormData({...formData,coreFeatures:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="3" placeholder="魚腥草萃取：高達77%鎮靜舒緩泛紅&#10;積雪草：修護受損肌膚屏障"></textarea>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-black text-slate-500 mb-1">全成分解析表 (格式：名稱|說明|安全度。每行一個)</label>
-                                            <textarea value={formData.ingredientsText} onChange={e=>setFormData({...formData,ingredientsText:e.target.value})} className="w-full p-2.5 rounded-lg border font-mono text-sm focus:border-sakura-500 outline-none" rows="4" placeholder="魚腥草萃取|極佳的抗發炎與舒緩效果|高 / 安全&#10;玻尿酸|強效保濕鎖水|高 / 安全"></textarea>
+                                        
+                                        <div className="border-t border-slate-200 pt-4 mt-4">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <label className="block text-xs font-black text-slate-500">成分解析列表 (可自訂含量與添加物)</label>
+                                                <div className="flex gap-2">
+                                                    <button type="button" onClick={() => addIngredient('core')} className="text-[10px] bg-sakura-100 text-sakura-600 px-3 py-1.5 rounded-lg font-bold hover:bg-sakura-200 shadow-sm">+ 從清單庫選成分</button>
+                                                    <button type="button" onClick={() => addIngredient('additive')} className="text-[10px] bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold hover:bg-slate-300 shadow-sm">+ 手動輸入添加物</button>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {(formData.ingredientsList || []).map((ing, i) => (
+                                                    <div key={i} className="flex flex-wrap md:flex-nowrap gap-3 items-start bg-white p-4 rounded-lg border border-slate-200 shadow-sm relative group">
+                                                        <div className="w-full md:w-1/4">
+                                                            <label className="block text-[10px] font-bold text-slate-400 mb-1">{ing.type === 'core' ? '選擇成分 (來自資料庫)' : '手動輸入成分名稱'}</label>
+                                                            {ing.type === 'core' ? (
+                                                                <select value={ing.name} onChange={e=>updateIngredient(i, 'name', e.target.value)} className="w-full p-2 rounded-lg border bg-slate-50 focus:border-sakura-500 text-sm font-medium outline-none">
+                                                                    <option value="">請選擇...</option>
+                                                                    {ingredients.map(dbIng => <option key={dbIng.id} value={dbIng.name}>{dbIng.name}</option>)}
+                                                                </select>
+                                                            ) : (
+                                                                <input value={ing.name} onChange={e=>updateIngredient(i, 'name', e.target.value)} placeholder="如：防腐劑、香料" className="w-full p-2 rounded-lg border bg-slate-50 focus:border-sakura-500 text-sm font-medium outline-none" />
+                                                            )}
+                                                        </div>
+                                                        <div className="w-full md:w-1/6">
+                                                            <label className="block text-[10px] font-bold text-slate-400 mb-1">含量 (選填)</label>
+                                                            <input value={ing.amount} onChange={e=>updateIngredient(i, 'amount', e.target.value)} placeholder="例: 77% 或 適量" className="w-full p-2 rounded-lg border bg-slate-50 focus:border-sakura-500 text-sm font-medium outline-none" />
+                                                        </div>
+                                                        <div className="w-full md:w-1/3">
+                                                            <label className="block text-[10px] font-bold text-slate-400 mb-1">主要功效與機轉</label>
+                                                            <input value={ing.desc} onChange={e=>updateIngredient(i, 'desc', e.target.value)} placeholder="例: 優異的舒緩效果" className="w-full p-2 rounded-lg border bg-slate-50 focus:border-sakura-500 text-sm font-medium outline-none" />
+                                                        </div>
+                                                        <div className="w-full md:w-1/6">
+                                                            <label className="block text-[10px] font-bold text-slate-400 mb-1">安心度</label>
+                                                            <select value={ing.safety} onChange={e=>updateIngredient(i, 'safety', e.target.value)} className="w-full p-2 rounded-lg border bg-slate-50 focus:border-sakura-500 text-sm font-medium outline-none">
+                                                                <option value="高 / 安全">高 / 安全</option>
+                                                                <option value="中 / 注意">中 / 注意</option>
+                                                                <option value="低 / 警告">低 / 警告</option>
+                                                            </select>
+                                                        </div>
+                                                        <button type="button" onClick={() => removeIngredient(i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"><i className="fa-solid fa-xmark"></i></button>
+                                                    </div>
+                                                ))}
+                                                {!(formData.ingredientsList?.length) && <div className="text-center py-8 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm font-bold">目前尚未建立成分清單，請點擊上方按鈕新增</div>}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -652,53 +644,6 @@
                                             <textarea value={formData.dosageSteps} onChange={e=>setFormData({...formData,dosageSteps:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="3" placeholder="洗臉後打底|取適量於掌心輕拍全臉，避免摩擦&#10;搭配藥物|等待吸收後，針對痘痘處薄塗樂淨"></textarea>
                                         </div>
                                     </div>
-
-                                    {/* 評價與評分 */}
-                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
-                                        <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-solid fa-star mr-2 text-sakura-500"></i> 專家評價與雷達評分</h3>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-black text-slate-500 mb-1">星級 (例: 4.8)</label>
-                                                <input value={formData.rating} onChange={e=>setFormData({...formData,rating:e.target.value})} className="w-full p-2.5 rounded-lg border outline-none" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-black text-slate-500 mb-1">保濕力 (1-10)</label>
-                                                <input type="number" min="1" max="10" value={formData.scoreMoisture} onChange={e=>setFormData({...formData,scoreMoisture:e.target.value})} className="w-full p-2.5 rounded-lg border outline-none" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-black text-slate-500 mb-1">溫和度 (1-10)</label>
-                                                <input type="number" min="1" max="10" value={formData.scoreGentle} onChange={e=>setFormData({...formData,scoreGentle:e.target.value})} className="w-full p-2.5 rounded-lg border outline-none" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-black text-slate-500 mb-1">清爽度 (1-10)</label>
-                                                <input type="number" min="1" max="10" value={formData.scoreRefresh} onChange={e=>setFormData({...formData,scoreRefresh:e.target.value})} className="w-full p-2.5 rounded-lg border outline-none" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-black text-slate-500 mb-1">專家總結評語</label>
-                                            <textarea value={formData.pharmacistQuote} onChange={e=>setFormData({...formData,pharmacistQuote:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="2" placeholder="「這款非常適合油豆肌，成分單純不會干擾後續藥膏吸收...」"></textarea>
-                                        </div>
-                                    </div>
-
-                                    {/* 購物資訊 */}
-                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
-                                        <h3 className="font-bold text-slate-700 flex items-center"><i className="fa-solid fa-cart-shopping mr-2 text-sakura-500"></i> 購買參考資訊</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-black text-slate-500 mb-1">日幣售價 (僅數字)</label>
-                                                <input value={formData.priceYen} onChange={e=>setFormData({...formData,priceYen:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" placeholder="1900" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-black text-slate-500 mb-1">台幣售價 (僅數字)</label>
-                                                <input value={formData.priceTwd} onChange={e=>setFormData({...formData,priceTwd:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" placeholder="400" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-black text-slate-500 mb-1">購買通路與建議 (例如 Olive Young, 屈臣氏)</label>
-                                            <textarea value={formData.shoppingNotes} onChange={e=>setFormData({...formData,shoppingNotes:e.target.value})} className="w-full p-2.5 rounded-lg border focus:border-sakura-500 outline-none" rows="2" placeholder="韓國 Olive Young 常有買一送一優惠..."></textarea>
-                                        </div>
-                                    </div>
-
                                 </form>
                             )
                         )}
