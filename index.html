@@ -42,20 +42,19 @@
     <script type="text/babel" data-type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useCallback } = React;
 
-        // --- 雜湊加密函式 (SHA-256) ---
+        const ADMIN_HASH = "d5dbb48255049debcaa47af8d5ea8debe852462925c650a75b3756614e7ab1c6";
+        const APP_ID = "nippondrug";
+
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message.toLowerCase().trim());
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
-
-        // 預設的管理員電郵雜湊 (已更新為您提供的正確雜湊值)
-        const ADMIN_HASH = "d5dbb48255049debcaa47af8d5ea8debe852462925c650a75b3756614e7ab1c6";
 
         // --- 視圖：後台登入畫面 ---
         const AdminLoginView = ({ setView, authError }) => {
@@ -71,6 +70,7 @@
                 
                 try {
                     await signInWithPopup(auth, provider);
+                    // 成功後的狀態更新會由 App 元件監聽並自動跳轉
                 } catch (e) {
                     setLocalError('登入過程發生錯誤：' + e.message);
                     setIsLoading(false);
@@ -251,23 +251,36 @@
         // --- 視圖：後台管理介面 ---
         const AdminDashboard = ({ products, setView }) => {
             const [formData, setFormData] = useState(null);
-            const handleSignOut = () => {
-                signOut(getAuth()).then(() => window.location.reload());
-            };
+            
+            const handleSignOut = useCallback(() => {
+                const auth = getAuth();
+                signOut(auth).then(() => {
+                    window.location.reload();
+                });
+            }, []);
+
             const handleSave = async (e) => {
                 e.preventDefault();
-                const collRef = collection(window.db, 'products');
+                const collRef = collection(window.db, 'artifacts', APP_ID, 'public', 'data', 'products');
                 try {
                     if (formData.id) {
-                        await updateDoc(doc(window.db, 'products', formData.id), formData);
+                        const docRef = doc(window.db, 'artifacts', APP_ID, 'public', 'data', 'products', formData.id);
+                        await updateDoc(docRef, formData);
                     } else {
                         await addDoc(collRef, { ...formData, createdAt: Date.now() });
                     }
                     setFormData(null);
-                } catch (error) { alert("儲存失敗：" + error.message); }
+                } catch (error) { 
+                    console.error(error);
+                    alert("儲存失敗，請檢查資料庫規則權限"); 
+                }
             };
+
             const handleDelete = async (id) => {
-                if(confirm("確定要永久刪除這筆藥品資料嗎？")) await deleteDoc(doc(window.db, 'products', id));
+                if(confirm("確定要永久刪除這筆藥品資料嗎？")) {
+                    const docRef = doc(window.db, 'artifacts', APP_ID, 'public', 'data', 'products', id);
+                    await deleteDoc(docRef);
+                }
             };
 
             return (
@@ -375,6 +388,8 @@
             const [authError, setAuthError] = useState('');
             const [dbReady, setDbReady] = useState(false);
 
+            useEffect(() => { window.scrollTo(0, 0); }, [view]);
+
             useEffect(() => {
                 const firebaseConfig = {
                     apiKey: "AIzaSyDQ3jh6JLTAEEedCNaev_7wuDzSrX9rdJw",
@@ -396,10 +411,11 @@
                         if (emailHash === ADMIN_HASH) {
                             setIsAuthenticated(true);
                             setAuthError('');
+                            // 修復：成功後自動跳轉至後台
+                            setView('admin');
                         } else {
                             setIsAuthenticated(false);
                             const maskedEmail = u.email.substring(0, 3) + "****";
-                            // 【關鍵修復】：如果比對失敗，顯示雜湊值供使用者修復程式碼
                             setAuthError(`身分驗證失敗：帳號 ${maskedEmail} 沒有管理員權限。\n\n您的帳號雜湊值為：\n${emailHash}\n\n請複製上方雜湊值並替換程式碼中的 ADMIN_HASH 常數。`);
                             await signOut(auth);
                         }
@@ -412,8 +428,12 @@
 
             useEffect(() => {
                 if (!dbReady) return;
-                return onSnapshot(collection(window.db, 'products'), (snapshot) => {
+                // 使用嚴格規範路徑
+                const collRef = collection(window.db, 'artifacts', APP_ID, 'public', 'data', 'products');
+                return onSnapshot(collRef, (snapshot) => {
                     setProducts(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+                }, (error) => {
+                    console.error("Firestore Error:", error);
                 });
             }, [dbReady]);
 
